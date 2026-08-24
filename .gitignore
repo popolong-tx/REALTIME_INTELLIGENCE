@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Models
+models/*.joblib
+models/*.pkl
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Build
+frontend/build/
+frontend/dist/
+
+# Cache
+.cache/
+*.cache
