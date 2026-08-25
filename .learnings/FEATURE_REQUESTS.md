@@ -1,10 +1,97 @@
 # Feature Requests
 
+## [FEAT-20260825-008] intelligence_analysis_history
+
+**Logged**: 2026-08-25T12:35:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Requested Capability
+Persist the results from realtime information search, project-risk intelligence, and geopolitical financing analysis as history records that can be opened from the page and exported exactly as they were originally generated.
+
+### User Context
+Decision users need to revisit earlier analysis without rerunning Grok, compare what was known at that time, and export the original record for review or distribution.
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+Add one immutable workspace-scoped history model for all three workflows, automatically save successful live/partial results and their input context, expose list/detail/PDF endpoints, add page history panels with click-to-restore behavior, and ensure exports render the stored snapshot rather than calling Grok again.
+
+### Metadata
+- Frequency: recurring
+- Related Features: intelligence_pdf_export, scheduled_intelligence_monitoring, audit_trail, citation_tracking
+
+### Resolution
+- **Resolved**: 2026-08-25T13:11:00+08:00
+- **Notes**: Added immutable workspace-scoped history for all three decision-intelligence workflows, automatic persistence for direct and monitor-triggered live/partial results, idempotent request/run linkage, list/detail/exact-PDF APIs, audit events, page history panels, click-to-restore form and result state, direct historical export, workspace-switch clearing, responsive styling, readiness/platform contracts, and OpenSpec/README documentation. Verified 9/9 operational regression tests, strict OpenSpec validation, runtime 2026.08.25.20, desktop browser restore/export requests, and 390px mobile layouts with no horizontal overflow. Removed the temporary browser-QA record after verification.
+
+---
+
+## [FEAT-20260825-007] env_login_and_responsive_information_architecture
+
+**Logged**: 2026-08-25T09:50:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Requested Capability
+Add a real login page whose username and password are configured only through the server `.env`, and make the full application readable and operable on phone, tablet, and desktop browsers with clearer page titles.
+
+### User Context
+The local test system needs a controlled entry point before exposing decision intelligence or APIs. Users also need concise task-oriented titles and layouts that remain legible across device sizes rather than long slogan-style headings.
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+Add environment-backed credential settings, constant-time verification, rate-limited login, a signed HttpOnly session cookie, server middleware protecting the product shell and business APIs, login/status/logout endpoints, a responsive login screen and user menu, concise page titles, strengthened touch/mobile/tablet breakpoints, and regression plus multi-viewport browser validation.
+
+### Metadata
+- Frequency: recurring
+- Related Features: multi_tenant_open_platform, audit_trail, workspace_customization, responsive_ui
+
+### Resolution
+- **Resolved**: 2026-08-25T10:45:00+08:00
+- **Notes**: Added an environment-backed local test login, constant-time credential checks, failed-attempt throttling, signed expiring HttpOnly/SameSite sessions, protected product and business APIs, login/logout audit events, account menu and logout flow. Reworked primary headings into clear task names and strengthened phone/tablet/desktop layouts. Verified no actual password appears outside `backend/.env`, 8/8 operational regression tests, strict OpenSpec validation, live HTTP redirect/readiness, desktop browser login and logout, and 390px/768px responsive previews for both product and login pages on runtime 2026.08.25.19.
+
+---
+
+## [FEAT-20260825-006] scheduled_intelligence_pdf_reports
+
+**Logged**: 2026-08-25T09:17:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Requested Capability
+Automatically generate a downloadable PDF report whenever a scheduled realtime-information or project-risk monitor completes with a real result.
+
+### User Context
+Decision users should not need to revisit the workbench at every interval. Each successful scheduled detection needs a durable, traceable report tied to the exact monitor run and source request.
+
+### Complexity Estimate
+medium
+
+### Suggested Implementation
+Persist immutable PDF artifact metadata per successful monitor run, write files atomically on the server, expose workspace-scoped list and safe download APIs, surface the latest report on monitor cards, and skip report creation for configuration-required, failed, or empty results.
+
+### Metadata
+- Frequency: recurring
+- Related Features: scheduled_intelligence_monitoring, intelligence_pdf_export, audit_trail, citation_tracking
+
+### Resolution
+- **Resolved**: 2026-08-25T09:39:00+08:00
+- **Notes**: Successful live/partial realtime-information and project-risk monitor runs now generate one immutable PDF from the exact stored result without re-querying Grok. Added atomic local artifact storage, database metadata and run linkage, SHA-256 verification, workspace-scoped list/download APIs, generation/download audits, latest-report task-card actions, truthful skip behavior, readiness and platform contracts, OpenSpec updates, and regression coverage. Verified 7/7 operational tests, scheduled trigger persistence, cross-workspace denial, configuration-required no-report behavior, strict OpenSpec validation, runtime 2026.08.25.17, and both monitor pages in the running app.
+
+---
+
 ## [FEAT-20260824-005] intelligence_pdf_export
 
 **Logged**: 2026-08-24T16:10:00+08:00
 **Priority**: high
-**Status**: pending
+**Status**: resolved
 **Area**: backend
 
 ### Requested Capability
@@ -22,6 +109,10 @@ Add one governed server-side PDF renderer with workflow-specific sections, Chine
 ### Metadata
 - Frequency: first_time
 - Related Features: multisource_realtime_information_search, grok_sovereign_project_intelligence, citation_tracking, audit_trail
+
+### Resolution
+- **Resolved**: 2026-08-25T09:16:00+08:00
+- **Notes**: Added a shared server-side ReportLab renderer and guarded export API for all three workflows; reports include Chinese fonts, workflow-specific analysis, evidence, audit, disclaimers, safe filenames, no-store headers, and persistent export events. Added three result-level buttons, live/partial gating, responsive styling, readiness reporting, OpenSpec contracts, automated regression coverage, three visually inspected A4 samples, and a successful browser download from a real OCI Grok multi-tool result.
 
 ---
 

@@ -8,7 +8,18 @@
   const MONITOR_INTERVAL_LABELS = { 30: '每 30 分钟', 60: '每 1 小时', 120: '每 2 小时', 240: '每 4 小时', 360: '每 6 小时', 480: '每 8 小时', 720: '每 12 小时', 1440: '每 24 小时' };
   const WIZARD_TITLES = ['目标与范围', '证据快照', '策略与情景', '阶段与门控', '审阅与确认'];
   const NEXT_LABELS = ['继续：证据快照', '继续：策略与情景', '继续：阶段与门控', '继续：审阅确认', '生成模拟计划'];
-  const DEFAULT_BRAND = { name: 'Nexus Quant', subtitle: 'QUANT RESEARCH', mark: 'NQ', theme: 'emerald' };
+  const DEFAULT_BRAND = { name: 'Grok Demo', subtitle: 'REALTIME INTELLIGENCE', mark: 'GD', theme: 'emerald' };
+  const PAGE_COPY = {
+    today: ['决策情报概览', '集中查看实时风险、复杂推理与金融研究状态。'],
+    discover: ['发现研究机会', '用主题、条件和已有关注列表建立研究候选池。'],
+    'realtime-research': ['检索实时公开信息', '按关键词和日期范围搜索，分别展示 X 原文、公共网页、证据状态和来源链接。'],
+    'project-risk': ['监测项目实时风险', '持续监测政治、社会、债务、环境和声誉变化，并保留引用与审计信息。'],
+    geopolitics: ['分析地缘政治融资影响', '跟踪公开表态，推演项目管道、联合融资、借贷意愿、可行性和风险转移。'],
+    plans: ['管理模拟交易计划', '把研究结论转化为可复核的行动条件，不提交任何实盘订单。'],
+    portfolio: ['跟踪模拟组合', '记录阶段状态、触发器和待复核事项，不连接实盘账户。'],
+    lab: ['管理策略实验', '按研究、回测、影子跟踪和治理审阅阶段管理模型。'],
+    settings: ['管理平台与工作区', '配置个人、机构与客户化工作区，以及策略、模型、数据和情报扩展。'],
+  };
   const THEME_PALETTES = {
     emerald: { green: '#0da678', deep: '#087c5b', pale: '#dff5ec', lime: '#bcf26d' },
     navy: { green: '#3977b8', deep: '#24598d', pale: '#e4eff9', lime: '#8ec5ff' },
@@ -52,6 +63,16 @@
     projectRisk: null,
     geopoliticalImpact: null,
     intelligenceMonitors: [],
+    intelligenceHistory: {
+      'realtime-research': [],
+      'project-risk': [],
+      'geopolitical-impact': [],
+    },
+    activeIntelligenceHistory: {
+      'realtime-research': '',
+      'project-risk': '',
+      'geopolitical-impact': '',
+    },
     settingsSection: 'overview',
   };
 
@@ -69,7 +90,16 @@
   }
 
   function escapeHtml(value) {
-    return String(value ?? '')
+    const original = String(value ?? '');
+    const cleaned = original
+      .replaceAll('该字段未按要求返回简体中文，请重新运行分析。', '')
+      .replaceAll('该条内容未按要求返回简体中文，请重新运行分析。', '')
+      .replaceAll('该来源未返回可用的中文摘要，请通过来源链接核验原文。', '')
+      .replaceAll('模型未按要求返回简体中文，本次英文回复已被拦截，请重新运行。', '')
+      .replace(/发现\s*\d+\s*个未按要求返回中文的字段，系统已阻止其直接展示；请重新运行分析。/g, '')
+      .replace(/^[；;\s]+|[；;\s]+$/g, '')
+      .replace(/[；;]{2,}/g, '；');
+    return (cleaned || (original ? '—' : ''))
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
@@ -123,6 +153,11 @@
     try {
       const headers = { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) };
       const response = await fetch(`${API_BASE}${path}`, { ...options, headers, signal: controller.signal });
+      if (response.status === 401 && !path.startsWith('/api/v1/auth/')) {
+        const next = `${window.location.pathname}${window.location.search}`;
+        window.location.replace(`/login?next=${encodeURIComponent(next)}`);
+        throw new Error('登录状态已失效，正在返回登录页');
+      }
       const type = response.headers.get('content-type') || '';
       const payload = type.includes('application/json') ? await response.json() : await response.text();
       if (!response.ok) {
@@ -136,6 +171,76 @@
       throw error;
     } finally {
       clearTimeout(timeout);
+    }
+  }
+
+  function applyClearPageTitles() {
+    Object.entries(PAGE_COPY).forEach(([view, copy]) => {
+      const heading = $(`#view-${view} .page-heading h1`);
+      const description = $(`#view-${view} .page-heading p:not(.eyebrow)`);
+      if (heading) heading.textContent = copy[0];
+      if (description) description.textContent = copy[1];
+    });
+    const researchHeading = $('#research-empty h1');
+    const researchDescription = $('#research-empty > p:not(.eyebrow)');
+    if (researchHeading) researchHeading.textContent = '开始证券研究';
+    if (researchDescription) researchDescription.textContent = '输入证券代码，集中查看行情、技术指标、财务数据、实时新闻与 X 趋势。';
+    const realtimeAudit = $('#realtime-audit');
+    const projectAudit = $('#project-risk-audit');
+    const geoAudit = $('#geo-audit');
+    if (realtimeAudit) realtimeAudit.innerHTML = '<span>模型 —</span><span>工具 —</span><span>请求 —</span>';
+    if (projectAudit) projectAudit.innerHTML = '<span>模型 —</span><span>来源 0</span><span>请求 —</span>';
+    if (geoAudit) geoAudit.innerHTML = '<span>模型 —</span><span>来源 0</span><span>请求 —</span>';
+    const projectDirectLabel = $('#project-risk-direct span');
+    const geoDirectLabel = $('#geo-direct span');
+    if (projectDirectLabel) projectDirectLabel.textContent = '直接判断';
+    if (geoDirectLabel) geoDirectLabel.textContent = '重点关注';
+  }
+
+  function userInitials(username) {
+    const normalized = String(username || 'AD').trim();
+    return normalized.slice(0, 2).toUpperCase() || 'AD';
+  }
+
+  function closeUserMenu() {
+    $('#user-menu-popover')?.classList.add('hidden');
+    $('#user-menu-trigger')?.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleUserMenu() {
+    const menu = $('#user-menu-popover');
+    const trigger = $('#user-menu-trigger');
+    if (!menu || !trigger) return;
+    const opening = menu.classList.contains('hidden');
+    menu.classList.toggle('hidden', !opening);
+    trigger.setAttribute('aria-expanded', String(opening));
+  }
+
+  async function loadAuthSession() {
+    try {
+      const session = await api('/api/v1/auth/status', { timeout: 10000 });
+      if (!session.authenticated) {
+        window.location.replace(`/login?next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`);
+        return false;
+      }
+      const mark = userInitials(session.username);
+      $('#user-menu-trigger').textContent = mark;
+      $('#session-user-mark').textContent = mark;
+      $('#session-username').textContent = session.username || '管理员';
+      return true;
+    } catch (_) {
+      window.location.replace('/login');
+      return false;
+    }
+  }
+
+  async function logout() {
+    const button = $('#logout-button');
+    if (button) button.disabled = true;
+    try {
+      await fetch('/api/v1/auth/logout', { method: 'POST', headers: { Accept: 'application/json' } });
+    } finally {
+      window.location.replace('/login');
     }
   }
 
@@ -164,9 +269,12 @@
     const container = $('#module-readiness');
     if (!container) return;
     const labels = {
+      authentication: '登录与会话保护',
       market_research: '行情与证券研究',
       grok_intelligence: 'Grok 实时情报',
+      intelligence_history: '情报分析历史',
       intelligence_scheduler: '情报定时监控',
+      intelligence_pdf_export: '情报 PDF 导出',
       recommendations: '推荐与计划生成',
       saved_plans: '计划服务端存储',
       model_training: '模型训练 / 评估 / 微调',
@@ -202,6 +310,9 @@
     if (view === 'realtime-research' || view === 'project-risk' || view === 'geopolitics') loadIntelligenceCapabilities();
     if (view === 'realtime-research') loadIntelligenceMonitors('realtime_research');
     if (view === 'project-risk') loadIntelligenceMonitors('project_risk');
+    if (view === 'realtime-research') loadIntelligenceHistory('realtime-research');
+    if (view === 'project-risk') loadIntelligenceHistory('project-risk');
+    if (view === 'geopolitics') loadIntelligenceHistory('geopolitical-impact');
   }
 
   function openSidebar() {
@@ -775,10 +886,35 @@
     escalate: '升级至管理层',
   };
 
+  const URGENCY_LABELS = {
+    now: '立即',
+    '7_days': '7 天内',
+    '30_days': '30 天内',
+    monitor: '持续监控',
+  };
+
+  const SCENARIO_LABELS = {
+    baseline: '基准情景',
+    stress: '压力情景',
+    opportunity: '机会情景',
+  };
+
+  const TIMING_LABELS = {
+    now: '立即',
+    '30_days': '30 天内',
+    quarter: '本季度',
+  };
+
   const INTELLIGENCE_PDF_META = {
     'realtime-research': { stateKey: 'realtimeResearch', button: '#export-realtime-pdf', label: '实时信息检索' },
     'project-risk': { stateKey: 'projectRisk', button: '#export-project-risk-pdf', label: '项目风险情报' },
     'geopolitical-impact': { stateKey: 'geopoliticalImpact', button: '#export-geo-pdf', label: '地缘融资推演' },
+  };
+
+  const INTELLIGENCE_HISTORY_META = {
+    'realtime-research': { list: '#realtime-history-list', count: '#realtime-history-count', label: '实时信息检索', render: renderRealtimeResearchResult },
+    'project-risk': { list: '#project-history-list', count: '#project-history-count', label: '项目风险情报', render: renderProjectRiskResult },
+    'geopolitical-impact': { list: '#geo-history-list', count: '#geo-history-count', label: '地缘融资推演', render: renderGeopoliticalResult },
   };
 
   function splitList(value) {
@@ -816,7 +952,7 @@
     container.innerHTML = sources.map((item) => {
       const link = safeUrl(item.url);
       const isX = item.source_type === 'x';
-      return `<div class="source-item"><span class="source-kind ${isX ? 'unverified' : ''}"><i></i>${escapeHtml(item.id || 'SOURCE')} · ${isX ? 'X 公开内容' : '公开来源'}</span><div><strong>${escapeHtml(item.title || '未命名来源')}</strong><p>${escapeHtml(item.excerpt || (isX ? '公开观点或声明，需独立核验。' : '来源可访问，事实仍需交叉验证。'))}</p></div>${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">打开来源 ↗</a>` : '<span class="status-chip partial">无链接</span>'}</div>`;
+      return `<div class="source-item"><span class="source-kind ${isX ? 'unverified' : ''}"><i></i>${escapeHtml(item.id || '来源')} · ${isX ? 'X 公开内容' : '公开来源'}</span><div><strong>${escapeHtml(item.title || '未命名来源')}</strong><p>${escapeHtml(item.excerpt || (isX ? '公开观点或声明，需独立核验。' : '来源可访问，事实仍需交叉验证。'))}</p></div>${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">打开来源 ↗</a>` : '<span class="status-chip partial">无链接</span>'}</div>`;
     }).join('');
   }
 
@@ -841,9 +977,9 @@
       : [audit.date_from, audit.date_to].filter(Boolean).join(' → ') || '—';
     const usedTools = (audit.tools || []).join(' + ');
     const requestedTools = (audit.requested_tools || []).join(' + ');
-    const tools = usedTools || (requestedTools ? `PLANNED ${requestedTools}` : '—');
+    const tools = usedTools || (requestedTools ? `计划使用 ${requestedTools}` : '—');
     const element = $(selector);
-    if (element) element.innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${sourceCount}</span><span>WINDOW ${escapeHtml(windowLabel)}</span><span>TOOLS ${escapeHtml(tools)}</span><span>REQUEST ${escapeHtml(requestId)}</span>`;
+    if (element) element.innerHTML = `<span>模型 ${escapeHtml(audit.model || '—')}</span><span>来源 ${sourceCount}</span><span>窗口 ${escapeHtml(windowLabel)}</span><span>工具 ${escapeHtml(tools)}</span><span>请求 ${escapeHtml(requestId)}</span>`;
   }
 
   async function loadIntelligenceCapabilities(force = false) {
@@ -879,6 +1015,144 @@
     button.title = exportable ? `将${meta.label}结果导出为 PDF` : '完成真实分析后可导出 PDF';
   }
 
+  function trackActiveIntelligenceHistory(workflow, result) {
+    state.activeIntelligenceHistory[workflow] = result?.history_record?.id || '';
+    renderIntelligenceHistory(workflow);
+  }
+
+  function historyTriggerLabel(item) {
+    if (item.trigger === 'schedule') return '定时监控';
+    if (item.monitor_id) return '监控手动执行';
+    return '手动分析';
+  }
+
+  function renderIntelligenceHistory(workflow) {
+    const meta = INTELLIGENCE_HISTORY_META[workflow];
+    if (!meta) return;
+    const list = $(meta.list);
+    const count = $(meta.count);
+    const items = state.intelligenceHistory[workflow] || [];
+    if (count) count.textContent = items.length;
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = '<div class="empty-state small"><strong>还没有分析记录</strong><span>真实或部分成功的分析会自动保存在这里。</span></div>';
+      return;
+    }
+    list.innerHTML = items.map((item) => {
+      const selected = state.activeIntelligenceHistory[workflow] === item.id;
+      const created = item.created_at ? timestamp(new Date(item.created_at)) : '时间未知';
+      const status = item.status === 'partial' ? '部分完成' : '已完成';
+      return `<article class="analysis-history-item ${selected ? 'selected' : ''}"><button class="history-primary" type="button" data-history-action="open" data-history-id="${escapeHtml(item.id)}" data-history-workflow="${escapeHtml(workflow)}"><strong>${escapeHtml(item.title || meta.label)}</strong><small>${escapeHtml(created)} · ${escapeHtml(status)}</small><p>${escapeHtml(item.summary || '点击查看当时保存的完整分析结果。')}</p></button><em class="history-source-count">${Number(item.source_count || 0)} 源</em><div class="history-actions"><span>${escapeHtml(historyTriggerLabel(item))}</span><button class="text-button" type="button" data-history-action="export" data-history-id="${escapeHtml(item.id)}" data-history-workflow="${escapeHtml(workflow)}">导出当时记录</button></div></article>`;
+    }).join('');
+  }
+
+  async function loadIntelligenceHistory(workflow) {
+    const meta = INTELLIGENCE_HISTORY_META[workflow];
+    if (!meta) return;
+    const list = $(meta.list);
+    if (list) list.innerHTML = '<div class="loading-state"><span class="spinner"></span>加载历史记录</div>';
+    try {
+      const data = await api(`/api/v1/intelligence/history?workspace_id=${encodeURIComponent(state.workspaceId)}&workflow=${encodeURIComponent(workflow)}&limit=50`, { timeout: 15000 });
+      state.intelligenceHistory[workflow] = data.items || [];
+      renderIntelligenceHistory(workflow);
+    } catch (error) {
+      if (list) list.innerHTML = `<div class="empty-state small"><strong>历史记录暂不可用</strong><span>${escapeHtml(error.message)}</span></div>`;
+    }
+  }
+
+  function restoreIntelligenceHistoryContext(workflow, context = {}) {
+    if (workflow === 'realtime-research') {
+      $('#realtime-query').value = context.query || '';
+      $('#realtime-keywords').value = (context.keywords || []).join(', ');
+      $('#realtime-date-from').value = context.date_from || '';
+      $('#realtime-date-to').value = context.date_to || '';
+      $$('input[name="realtime-source"]').forEach((input) => { input.checked = (context.source_channels || []).includes(input.value); });
+      $('#realtime-use-code').checked = context.use_code_interpreter !== false;
+      $('#realtime-preserve-original').checked = context.preserve_x_original !== false;
+      $('#realtime-max-results').value = String(context.max_results || 30);
+      return;
+    }
+    if (workflow === 'project-risk') {
+      $('#project-country').value = context.country || '';
+      $('#project-name').value = context.project_name || '';
+      $('#project-product').value = context.product_type || 'sovereign_loan';
+      $('#project-window').value = String(context.window_days || 7);
+      $('#project-question').value = context.monitoring_question || '';
+      $$('input[name="project-risk-focus"]').forEach((input) => { input.checked = (context.risk_focus || []).includes(input.value); });
+      return;
+    }
+    $('#geo-issue').value = context.issue || '';
+    $('#geo-regions').value = (context.regions || []).join(', ');
+    $('#geo-actors').value = (context.actors || []).join(', ');
+    const products = context.product_types || [];
+    const product = products.length > 1 ? '全部产品' : products[0];
+    if (product && Array.from($('#geo-product').options).some((option) => option.value === product)) $('#geo-product').value = product;
+    $('#geo-horizon').value = context.horizon || 'one_year';
+    $('#geo-window').value = String(context.window_days || 30);
+    $('#geo-question').value = context.decision_question || '';
+  }
+
+  async function openIntelligenceHistory(recordId, workflow) {
+    const meta = INTELLIGENCE_HISTORY_META[workflow];
+    if (!meta) return;
+    try {
+      const detail = await api(`/api/v1/intelligence/history/${encodeURIComponent(recordId)}?workspace_id=${encodeURIComponent(state.workspaceId)}`, { timeout: 15000 });
+      const historyRecord = { ...detail };
+      delete historyRecord.result;
+      delete historyRecord.query_context;
+      const result = { ...(detail.result || {}), history_record: historyRecord };
+      restoreIntelligenceHistoryContext(workflow, detail.query_context || {});
+      state.activeIntelligenceHistory[workflow] = recordId;
+      meta.render(result);
+      renderIntelligenceHistory(workflow);
+      document.querySelector(meta.list)?.closest('.intelligence-query-panel')?.nextElementSibling?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast('已打开历史分析', `${meta.label} · ${detail.created_at ? timestamp(new Date(detail.created_at)) : '已保存记录'}`);
+    } catch (error) {
+      toast('打开历史记录失败', error.message, 'error');
+    }
+  }
+
+  async function downloadIntelligenceHistoryPdf(recordId, workflow, button = null) {
+    const meta = INTELLIGENCE_HISTORY_META[workflow];
+    if (!meta) return;
+    const original = button?.innerHTML;
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '<span class="spinner small"></span>生成 PDF';
+    }
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/intelligence/history/${encodeURIComponent(recordId)}/pdf?workspace_id=${encodeURIComponent(state.workspaceId)}`);
+      if (response.status === 401) {
+        window.location.replace(`/login?next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`);
+        return;
+      }
+      if (!response.ok) {
+        const type = response.headers.get('content-type') || '';
+        const payload = type.includes('application/json') ? await response.json() : await response.text();
+        throw new Error(typeof payload === 'object' ? (payload.detail || '历史记录导出失败') : payload);
+      }
+      const blob = await response.blob();
+      if (blob.type !== 'application/pdf' || blob.size < 1000) throw new Error('服务端没有返回有效 PDF');
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = pdfDownloadFilename(response, workflow);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+      toast('历史记录 PDF 已生成', `${meta.label} · ${(blob.size / 1024).toFixed(1)} KB`);
+    } catch (error) {
+      toast('历史记录导出失败', error.message, 'error');
+    } finally {
+      if (button) {
+        button.innerHTML = original;
+        button.disabled = false;
+        if (button.matches('.intelligence-pdf-button')) updateIntelligencePdfButton(workflow, state[INTELLIGENCE_PDF_META[workflow].stateKey]);
+      }
+    }
+  }
+
   function pdfDownloadFilename(response, workflow) {
     const disposition = response.headers.get('content-disposition') || '';
     const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
@@ -894,6 +1168,11 @@
     const button = meta ? $(meta.button) : null;
     if (!meta || !button || !['live', 'partial'].includes(result?.status)) {
       toast('暂无可导出的真实分析结果', '请先完成对应的实时检索或推演', 'error');
+      return;
+    }
+    const historyId = result.history_record?.id || state.activeIntelligenceHistory[workflow];
+    if (historyId) {
+      await downloadIntelligenceHistoryPdf(historyId, workflow, button);
       return;
     }
     const original = button.innerHTML;
@@ -929,6 +1208,35 @@
     }
   }
 
+  async function downloadScheduledMonitorReport(item) {
+    const report = item?.latest_report;
+    if (!report?.id) {
+      toast('尚无定时报告', '真实监控成功运行后会自动生成 PDF', 'error');
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/intelligence/reports/${encodeURIComponent(report.id)}/download?workspace_id=${encodeURIComponent(state.workspaceId)}`);
+      if (!response.ok) {
+        const type = response.headers.get('content-type') || '';
+        const payload = type.includes('application/json') ? await response.json() : await response.text();
+        throw new Error(typeof payload === 'object' ? (payload.detail || '报告下载失败') : payload);
+      }
+      const blob = await response.blob();
+      if (blob.type !== 'application/pdf' || blob.size < 1000) throw new Error('服务端没有返回有效 PDF');
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = report.filename || 'intelligence-monitor-report.pdf';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+      toast('定时报告已下载', `${item.name} · ${(blob.size / 1024).toFixed(1)} KB`, 'success');
+    } catch (error) {
+      toast('定时报告下载失败', error.message, 'error');
+    }
+  }
+
   function realtimeResearchPayload() {
     return {
       query: $('#realtime-query').value.trim(),
@@ -959,8 +1267,13 @@
       const isX = item.source_type === 'x';
       const [evidenceLabel, evidenceClass] = evidenceStatusMeta(item.evidence_status);
       const link = safeUrl(item.url);
-      const body = isX && item.original_text ? item.original_text : item.content_excerpt;
-      return `<article class="realtime-item ${isX ? 'x-item' : 'web-item'}"><div class="realtime-item-meta"><span class="source-channel ${isX ? 'x' : 'web'}">${isX ? 'X' : 'WEB'}</span><span>${escapeHtml(item.author || 'unknown')}</span><time>${escapeHtml(item.published_at || '时间未知')}</time><em class="status-chip ${evidenceClass}">${escapeHtml(evidenceLabel)}</em></div><h3>${escapeHtml(item.title || (isX ? 'X 公开内容' : '公共开放来源'))}</h3>${body ? `<blockquote class="${isX ? 'original-post' : ''}">${escapeHtml(body)}</blockquote>` : '<p class="missing-content">来源没有返回可验证的正文摘录。</p>'}<div class="realtime-item-foot"><span>${escapeHtml((item.matched_keywords || []).join(' · ') || '未标注匹配词')}</span>${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">打开原始来源 ↗</a>` : '<span class="status-chip partial">无可访问链接</span>'}</div></article>`;
+      const original = isX ? item.original_text : '';
+      const summary = item.content_excerpt || '';
+      const body = isX ? original : summary;
+      const chineseContext = isX && summary
+        ? `<div class="item-chinese-translation"><strong>中文说明</strong><p>${escapeHtml(summary)}</p></div>`
+        : '';
+      return `<article class="realtime-item ${isX ? 'x-item' : 'web-item'}"><div class="realtime-item-meta"><span class="source-channel ${isX ? 'x' : 'web'}">${isX ? 'X' : '网页'}</span><span>${escapeHtml(item.author || '未知发布者')}</span><time>${escapeHtml(item.published_at || '时间未知')}</time><em class="status-chip ${evidenceClass}">${escapeHtml(evidenceLabel)}</em></div><h3>${escapeHtml(item.title || (isX ? 'X 公开内容' : '公共开放来源'))}</h3>${body ? `<blockquote class="${isX ? 'original-post' : ''}">${escapeHtml(body)}</blockquote>` : '<p class="missing-content">来源没有返回可验证的正文摘录。</p>'}${chineseContext}<div class="realtime-item-foot"><span>${escapeHtml((item.matched_keywords || []).join(' · ') || '未标注匹配词')}</span>${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">打开原始来源 ↗</a>` : '<span class="status-chip partial">无可访问链接</span>'}</div></article>`;
     }).join('');
   }
 
@@ -970,7 +1283,7 @@
     const partial = result?.status === 'partial';
     const counts = result?.counts || {};
     setChip($('#realtime-status'), hasLiveResult ? (partial ? '部分检索完成' : '检索完成') : 'OCI 待配置', hasLiveResult ? (partial ? 'partial' : 'healthy') : 'partial');
-    $('#realtime-asof').textContent = hasLiveResult ? `AS OF ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '未查询外部信息';
+    $('#realtime-asof').textContent = hasLiveResult ? `截至 ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '未查询外部信息';
     $('#realtime-summary').className = hasLiveResult ? 'brief-copy' : 'brief-placeholder';
     $('#realtime-summary').innerHTML = hasLiveResult
       ? `<p>${escapeHtml(analysis.executive_summary || '本次没有返回可解析的综述，请检查来源账本。')}</p>`
@@ -991,6 +1304,7 @@
     renderInstitutionalSources('#realtime-sources', result?.evidence || []);
     const warnings = result?.warnings || [];
     $('#realtime-warning').innerHTML = `<svg><use href="#i-shield"/></svg><span>${escapeHtml(warnings.join('；') || '公开内容是研究证据；观点、转述和交易声明不会自动升级为事实。')}</span>`;
+    trackActiveIntelligenceHistory('realtime-research', result);
   }
 
   async function runRealtimeResearch(event) {
@@ -1006,6 +1320,7 @@
     try {
       const result = await api('/api/v1/intelligence/realtime/search', { method: 'POST', body: JSON.stringify(payload), timeout: 120000 });
       renderRealtimeResearchResult(result);
+      if (result.history_record?.id) loadIntelligenceHistory('realtime-research');
       const complete = ['live', 'partial'].includes(result.status);
       toast(complete ? '实时信息检索完成' : 'OCI Grok 尚未配置', complete ? `X ${result.counts?.x || 0} 条 · 公共网页 ${result.counts?.public || 0} 条 · 引用 ${result.counts?.citations || 0} 条` : '没有查询外部信息，也没有生成模拟结果', complete ? 'success' : 'error');
     } catch (error) {
@@ -1037,17 +1352,17 @@
     const configuredMessage = result?.configuration?.message;
     const overall = riskLevelMeta(analysis.overall_risk, null);
     setChip($('#project-risk-status'), live ? `${overall[0]}风险` : 'OCI 待配置', live ? overall[1] : 'partial');
-    $('#project-risk-asof').textContent = live ? `AS OF ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '未生成实时事实';
+    $('#project-risk-asof').textContent = live ? `截至 ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '未生成实时事实';
     $('#project-risk-summary').className = live ? 'brief-copy' : 'brief-placeholder';
     $('#project-risk-summary').innerHTML = live
       ? `<p>${escapeHtml(analysis.executive_summary || '模型未返回管理层摘要。')}</p>`
       : `<strong>实时分析尚未运行</strong><span>${escapeHtml(configuredMessage || '配置 OCI Grok 后生成带引用的风险简报。')}</span>`;
-    $('#project-risk-direct').innerHTML = `<span>DIRECT ASSESSMENT</span><p>${escapeHtml(live ? (analysis.direct_assessment || '本次没有形成直接判断，需人工检查来源账本。') : '当前仅展示分析框架；没有调用模型，也没有生成或伪造实时风险结论。')}</p>`;
+    $('#project-risk-direct').innerHTML = `<span>直接判断</span><p>${escapeHtml(live ? (analysis.direct_assessment || '本次没有形成直接判断，需人工检查来源账本。') : '当前仅展示分析框架；没有调用模型，也没有生成或伪造实时风险结论。')}</p>`;
     renderAuditRibbon('#project-risk-audit', result);
     renderRiskDimensions(analysis.risk_dimensions || [], result?.analysis_framework || []);
 
     const actions = analysis.decision_options || [];
-    $('#project-risk-actions').innerHTML = actions.length ? actions.map((item, index) => `<div class="decision-option"><span>${String(index + 1).padStart(2, '0')}</span><div><strong>${escapeHtml(PROJECT_ACTION_LABELS[item.action] || item.action || '复核动作')}</strong><p>${escapeHtml(item.rationale || '等待人工补充判断依据。')}</p><small>${escapeHtml(item.owner || '待指定负责人')} · ${escapeHtml(item.urgency || 'monitor')} · 触发：${escapeHtml(item.trigger || '待定义')}</small></div></div>`).join('') : '<div class="empty-state small"><strong>尚无动作建议</strong><span>每个动作必须包含负责人、时限和可观察触发条件。</span></div>';
+    $('#project-risk-actions').innerHTML = actions.length ? actions.map((item, index) => `<div class="decision-option"><span>${String(index + 1).padStart(2, '0')}</span><div><strong>${escapeHtml(PROJECT_ACTION_LABELS[item.action] || item.action || '复核动作')}</strong><p>${escapeHtml(item.rationale || '等待人工补充判断依据。')}</p><small>${escapeHtml(item.owner || '待指定负责人')} · ${escapeHtml(URGENCY_LABELS[item.urgency] || item.urgency || '持续监控')} · 触发：${escapeHtml(item.trigger || '待定义')}</small></div></div>`).join('') : '<div class="empty-state small"><strong>尚无动作建议</strong><span>每个动作必须包含负责人、时限和可观察触发条件。</span></div>';
 
     const events = analysis.events || [];
     $('#project-event-count').textContent = `${events.length} 条`;
@@ -1057,6 +1372,7 @@
     }).join('') : '<div class="empty-state small"><strong>没有可展示的实时事件</strong><span>未运行或证据不足时不会生成占位事件。</span></div>';
     renderInstitutionalSources('#project-risk-sources', result?.evidence || []);
     updateIntelligencePdfButton('project-risk', result);
+    trackActiveIntelligenceHistory('project-risk', result);
   }
 
   async function runProjectRisk(event) {
@@ -1072,6 +1388,7 @@
       const result = await api('/api/v1/intelligence/project-risk/analyze', { method: 'POST', body: JSON.stringify(payload), timeout: 100000 });
       state.projectRisk = result;
       renderProjectRiskResult(result);
+      if (result.history_record?.id) loadIntelligenceHistory('project-risk');
       const complete = ['live', 'partial'].includes(result.status);
       toast(complete ? '项目风险简报已生成' : 'OCI Grok 尚未配置', complete ? `${result.evidence?.length || 0} 条来源进入证据账本` : '已展示完整分析框架，没有生成实时事实', complete ? 'success' : 'error');
     } catch (error) {
@@ -1124,7 +1441,14 @@
         : `${payload.country || '未指定地区'} · ${payload.window_days || 7} 天证据窗口`;
       const [statusLabel, statusClass] = monitorStatusMeta(item);
       const next = item.is_active && item.next_run_at ? `下次 ${timestamp(new Date(item.next_run_at))}` : '定时执行已暂停';
-      return `<article class="monitor-item ${item.is_active ? '' : 'paused'}"><button class="monitor-primary" data-intelligence-monitor-action="open" data-monitor-id="${escapeHtml(item.id)}"><span class="monitor-mark">${escapeHtml(mark)}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(detail)}</small></div></button><div class="monitor-schedule"><span class="status-chip ${statusClass}">${escapeHtml(statusLabel)}</span><label class="monitor-interval-control"><span>间隔</span><select data-monitor-interval data-monitor-id="${escapeHtml(item.id)}" aria-label="调整 ${escapeHtml(item.name)} 的监控间隔">${monitorIntervalOptions(item.schedule_minutes)}</select></label></div><small class="monitor-next">${escapeHtml(next)}</small><div class="monitor-actions"><button class="text-button" data-intelligence-monitor-action="run" data-monitor-id="${escapeHtml(item.id)}">立即运行</button><button class="text-button" data-intelligence-monitor-action="toggle" data-monitor-id="${escapeHtml(item.id)}">${item.is_active ? '暂停' : '恢复'}</button><button class="text-button danger" data-intelligence-monitor-action="delete" data-monitor-id="${escapeHtml(item.id)}">移除</button></div></article>`;
+      const report = item.latest_report;
+      const reportLine = report
+        ? `<small class="monitor-next monitor-report">${escapeHtml(timestamp(new Date(report.generated_at)))} 自动生成 · ${(Number(report.byte_size || 0) / 1024).toFixed(1)} KB</small>`
+        : '<small class="monitor-next">真实结果完成后自动生成 PDF</small>';
+      const reportAction = report
+        ? `<button class="text-button" data-intelligence-monitor-action="download-report" data-monitor-id="${escapeHtml(item.id)}">下载最新报告</button>`
+        : '';
+      return `<article class="monitor-item ${item.is_active ? '' : 'paused'}"><button class="monitor-primary" data-intelligence-monitor-action="open" data-monitor-id="${escapeHtml(item.id)}"><span class="monitor-mark">${escapeHtml(mark)}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(detail)}</small></div></button><div class="monitor-schedule"><span class="status-chip ${statusClass}">${escapeHtml(statusLabel)}</span><label class="monitor-interval-control"><span>间隔</span><select data-monitor-interval data-monitor-id="${escapeHtml(item.id)}" aria-label="调整 ${escapeHtml(item.name)} 的监控间隔">${monitorIntervalOptions(item.schedule_minutes)}</select></label></div><small class="monitor-next">${escapeHtml(next)}</small>${reportLine}<div class="monitor-actions"><button class="text-button" data-intelligence-monitor-action="run" data-monitor-id="${escapeHtml(item.id)}">立即运行</button>${reportAction}<button class="text-button" data-intelligence-monitor-action="toggle" data-monitor-id="${escapeHtml(item.id)}">${item.is_active ? '暂停' : '恢复'}</button><button class="text-button danger" data-intelligence-monitor-action="delete" data-monitor-id="${escapeHtml(item.id)}">移除</button></div></article>`;
     }).join('');
   }
 
@@ -1216,6 +1540,7 @@
     const item = state.intelligenceMonitors.find((monitor) => monitor.id === id);
     if (!item) return;
     if (action === 'open') { openIntelligenceMonitor(item); return; }
+    if (action === 'download-report') { downloadScheduledMonitorReport(item); return; }
     if (action === 'delete') {
       try {
         await api(`/api/v1/intelligence/monitors/${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -1239,10 +1564,20 @@
         const execution = await api(`/api/v1/intelligence/monitors/${encodeURIComponent(id)}/run`, { method: 'POST', timeout: 120000 });
         if (execution.monitor) replaceIntelligenceMonitor(execution.monitor);
         const result = execution.run?.result;
+        if (result && execution.history_record) result.history_record = execution.history_record;
         if (result && item.monitor_type === 'realtime_research') renderRealtimeResearchResult(result);
         if (result && item.monitor_type === 'project_risk') renderProjectRiskResult(result);
+        if (execution.history_record?.workflow) loadIntelligenceHistory(execution.history_record.workflow);
         const configured = result && ['live', 'partial'].includes(result.status);
-        toast(configured ? '监控任务执行完成' : '监控任务已记录', configured ? '最新结果已载入工作台' : 'OCI 未配置，没有查询外部信息', configured ? 'success' : 'error');
+        const reportStatus = execution.report_generation?.status;
+        const detail = configured
+          ? reportStatus === 'generated'
+            ? '最新结果已载入工作台，PDF 已自动保存'
+            : reportStatus === 'failed'
+              ? '结果已载入，但 PDF 保存失败，请查看服务状态'
+              : '最新结果已载入工作台'
+          : 'OCI 未配置，没有查询外部信息，也未生成报告';
+        toast(configured ? '监控任务执行完成' : '监控任务已记录', detail, configured && reportStatus !== 'failed' ? 'success' : 'error');
       } catch (error) {
         toast('立即运行失败', error.message, 'error');
       } finally { completeLatestJob(); }
@@ -1288,12 +1623,12 @@
     const analysis = result?.analysis || {};
     const live = ['live', 'partial'].includes(result?.status);
     setChip($('#geo-status'), live ? '推演完成' : 'OCI 待配置', live ? 'healthy' : 'partial');
-    $('#geo-asof').textContent = live ? `AS OF ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '未生成实时事实';
+    $('#geo-asof').textContent = live ? `截至 ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '未生成实时事实';
     $('#geo-summary').className = live ? 'brief-copy' : 'brief-placeholder';
     $('#geo-summary').innerHTML = live
       ? `<p>${escapeHtml(analysis.executive_summary || '模型未返回战略摘要。')}</p>`
       : `<strong>实时推演尚未运行</strong><span>${escapeHtml(result?.configuration?.message || '配置 OCI Grok 后生成多情景融资影响分析。')}</span>`;
-    $('#geo-direct').innerHTML = `<span>WHAT NOT TO IGNORE</span><p>${escapeHtml(live ? (analysis.direct_assessment || '本次没有形成直接判断，需人工检查来源和假设。') : '当前仅展示分析框架；没有调用模型，也没有生成或伪造实时政策结论。')}</p>`;
+    $('#geo-direct').innerHTML = `<span>重点关注</span><p>${escapeHtml(live ? (analysis.direct_assessment || '本次没有形成直接判断，需人工检查来源和假设。') : '当前仅展示分析框架；没有调用模型，也没有生成或伪造实时政策结论。')}</p>`;
     renderAuditRibbon('#geo-audit', result);
 
     const paths = analysis.transmission_paths || [];
@@ -1303,15 +1638,16 @@
     }).join('') : '<div class="empty-state small"><strong>等待推理链</strong><span>未运行或证据不足时不会生成占位因果关系。</span></div>';
 
     const scenarios = analysis.scenarios || [];
-    $('#geo-scenarios').innerHTML = scenarios.length ? scenarios.slice(0, 3).map((item, index) => `<article class="panel scenario ${scenarioClass(item.name, index)}"><span>${escapeHtml(item.name || `情景 ${index + 1}`)} · ${escapeHtml(item.probability || '概率未量化')}</span><h2>${escapeHtml(item.pipeline_impact || '项目管道影响待评估')}</h2><dl><div><dt>联合融资</dt><dd>${escapeHtml(item.cofinancing_impact || '—')}</dd></div><div><dt>借贷意愿</dt><dd>${escapeHtml(item.borrowing_appetite || '—')}</dd></div><div><dt>可行性</dt><dd>${escapeHtml(item.feasibility || '—')}</dd></div><div><dt>风险转移</dt><dd>${escapeHtml(item.risk_transfer || '—')}</dd></div></dl><strong>早期信号：${escapeHtml((item.early_signals || []).join('；') || '尚未识别')}</strong></article>`).join('') : '<article class="panel scenario base"><span>基准情景</span><h2>等待推演</h2><p>配置并运行 Grok 后展示融资影响。</p><strong>没有生成演示结论</strong></article><article class="panel scenario bear"><span>压力情景</span><h2>等待推演</h2><p>识别可行性恶化与风险转移。</p><strong>没有生成演示结论</strong></article><article class="panel scenario bull"><span>机会情景</span><h2>等待推演</h2><p>识别合作窗口与替代路径。</p><strong>没有生成演示结论</strong></article>';
+    $('#geo-scenarios').innerHTML = scenarios.length ? scenarios.slice(0, 3).map((item, index) => `<article class="panel scenario ${scenarioClass(item.name, index)}"><span>${escapeHtml(SCENARIO_LABELS[item.name] || item.name || `情景 ${index + 1}`)} · ${escapeHtml(item.probability || '概率未量化')}</span><h2>${escapeHtml(item.pipeline_impact || '项目管道影响待评估')}</h2><dl><div><dt>联合融资</dt><dd>${escapeHtml(item.cofinancing_impact || '—')}</dd></div><div><dt>借贷意愿</dt><dd>${escapeHtml(item.borrowing_appetite || '—')}</dd></div><div><dt>可行性</dt><dd>${escapeHtml(item.feasibility || '—')}</dd></div><div><dt>风险转移</dt><dd>${escapeHtml(item.risk_transfer || '—')}</dd></div></dl><strong>早期信号：${escapeHtml((item.early_signals || []).join('；') || '尚未识别')}</strong></article>`).join('') : '<article class="panel scenario base"><span>基准情景</span><h2>等待推演</h2><p>配置并运行 Grok 后展示融资影响。</p><strong>没有生成演示结论</strong></article><article class="panel scenario bear"><span>压力情景</span><h2>等待推演</h2><p>识别可行性恶化与风险转移。</p><strong>没有生成演示结论</strong></article><article class="panel scenario bull"><span>机会情景</span><h2>等待推演</h2><p>识别合作窗口与替代路径。</p><strong>没有生成演示结论</strong></article>';
 
     const actions = analysis.decision_options || [];
-    $('#geo-actions').innerHTML = actions.length ? actions.map((item, index) => `<div class="decision-option"><span>${String(index + 1).padStart(2, '0')}</span><div><strong>${escapeHtml(item.action || '策略选项')}</strong><p><b>收益：</b>${escapeHtml(item.upside || '待评估')} · <b>代价：</b>${escapeHtml(item.downside || '待评估')}</p><small>${escapeHtml(item.owner || '待指定负责人')} · ${escapeHtml(item.timing || '待确定时机')} · 触发：${escapeHtml(item.trigger || '待定义')}</small></div></div>`).join('') : '<div class="empty-state small"><strong>尚无策略选项</strong><span>推演后展示时机、收益、代价和触发条件。</span></div>';
+    $('#geo-actions').innerHTML = actions.length ? actions.map((item, index) => `<div class="decision-option"><span>${String(index + 1).padStart(2, '0')}</span><div><strong>${escapeHtml(item.action || '策略选项')}</strong><p><b>收益：</b>${escapeHtml(item.upside || '待评估')} · <b>代价：</b>${escapeHtml(item.downside || '待评估')}</p><small>${escapeHtml(item.owner || '待指定负责人')} · ${escapeHtml(TIMING_LABELS[item.timing] || item.timing || '待确定时机')} · 触发：${escapeHtml(item.trigger || '待定义')}</small></div></div>`).join('') : '<div class="empty-state small"><strong>尚无策略选项</strong><span>推演后展示时机、收益、代价和触发条件。</span></div>';
 
     const assumptions = [...(analysis.assumptions || []).map((item) => ({ type: '假设', copy: item })), ...(analysis.unknowns || []).map((item) => ({ type: '未知', copy: item }))];
     $('#geo-assumptions').innerHTML = assumptions.length ? assumptions.map((item) => `<div><span>${escapeHtml(item.type)}</span><p>${escapeHtml(item.copy)}</p></div>`).join('') : '<div class="empty-state small"><strong>尚无假设</strong><span>关键不确定性必须显式呈现。</span></div>';
     renderInstitutionalSources('#geo-sources', result?.evidence || []);
     updateIntelligencePdfButton('geopolitical-impact', result);
+    trackActiveIntelligenceHistory('geopolitical-impact', result);
   }
 
   async function runGeopoliticalAnalysis(event) {
@@ -1326,6 +1662,7 @@
       const result = await api('/api/v1/intelligence/geopolitical-impact/analyze', { method: 'POST', body: JSON.stringify(payload), timeout: 120000 });
       state.geopoliticalImpact = result;
       renderGeopoliticalResult(result);
+      if (result.history_record?.id) loadIntelligenceHistory('geopolitical-impact');
       const complete = ['live', 'partial'].includes(result.status);
       toast(complete ? '地缘融资推演已生成' : 'OCI Grok 尚未配置', complete ? `${result.evidence?.length || 0} 条来源进入证据账本` : '已展示完整推演框架，没有生成实时事实', complete ? 'success' : 'error');
     } catch (error) {
@@ -1928,10 +2265,11 @@
   function workspaceMark(workspace) {
     if (workspace.id === 'personal') return 'MY';
     if (workspace.id === 'institution') return 'IR';
-    return String(state.brand.mark || 'NQ').slice(0, 3).toUpperCase();
+    return String(state.brand.mark || 'GD').slice(0, 3).toUpperCase();
   }
 
   function applyBrandConfig(candidate = state.brand) {
+    if (candidate?.name === 'Nexus Quant' && candidate?.mark === 'NQ') candidate = DEFAULT_BRAND;
     const theme = THEME_PALETTES[candidate?.theme] ? candidate.theme : DEFAULT_BRAND.theme;
     const brand = {
       name: String(candidate?.name || DEFAULT_BRAND.name).trim().slice(0, 30),
@@ -2062,8 +2400,29 @@
     if (!workspace) return;
     state.workspaceId = workspace.id;
     writeStorage('nexus-workspace', workspace.id);
+    Object.keys(state.intelligenceHistory).forEach((workflow) => {
+      state.intelligenceHistory[workflow] = [];
+      state.activeIntelligenceHistory[workflow] = '';
+    });
+    state.realtimeResearch = null;
+    state.projectRisk = null;
+    state.geopoliticalImpact = null;
     renderWorkspaceContext();
     loadPlans();
+    if (state.view === 'realtime-research') {
+      renderRealtimeResearchResult({ status: 'idle', workflow: 'realtime-research', analysis: {} });
+      loadIntelligenceMonitors('realtime_research');
+      loadIntelligenceHistory('realtime-research');
+    }
+    if (state.view === 'project-risk') {
+      renderProjectRiskResult({ status: 'idle', workflow: 'project-risk', analysis: {} });
+      loadIntelligenceMonitors('project_risk');
+      loadIntelligenceHistory('project-risk');
+    }
+    if (state.view === 'geopolitics') {
+      renderGeopoliticalResult({ status: 'idle', workflow: 'geopolitical-impact', analysis: {} });
+      loadIntelligenceHistory('geopolitical-impact');
+    }
     closeWorkspaceModal();
     toast(workspace.provisioning === 'local_active' ? '已切换工作区' : '已进入模板预览', `${workspace.name} · ${workspace.policy_pack}`);
   }
@@ -2092,7 +2451,7 @@
     applyBrandConfig(DEFAULT_BRAND);
     writeStorage('nexus-brand', state.brand);
     renderWorkspaceContext();
-    toast('已恢复默认品牌', 'Nexus Quant · 研究绿');
+    toast('已恢复默认品牌', 'Grok Demo · 研究绿');
   }
 
   function switchSettingsSection(section) {
@@ -2168,6 +2527,11 @@
       if (alertButton) handleAlertAction(alertButton.dataset.alertId, alertButton.dataset.alertAction);
       const monitorAction = event.target.closest('[data-intelligence-monitor-action]');
       if (monitorAction) handleIntelligenceMonitor(monitorAction.dataset.monitorId, monitorAction.dataset.intelligenceMonitorAction);
+      const historyAction = event.target.closest('[data-history-action]');
+      if (historyAction?.dataset.historyAction === 'open') openIntelligenceHistory(historyAction.dataset.historyId, historyAction.dataset.historyWorkflow);
+      if (historyAction?.dataset.historyAction === 'export') downloadIntelligenceHistoryPdf(historyAction.dataset.historyId, historyAction.dataset.historyWorkflow, historyAction);
+      const historyRefresh = event.target.closest('[data-history-refresh]');
+      if (historyRefresh) loadIntelligenceHistory(historyRefresh.dataset.historyRefresh);
       const planButton = event.target.closest('[data-plan-id]');
       if (planButton && !event.target.closest('[data-model-id]')) openPlanDetail(planButton.dataset.planId);
       const planFreeze = event.target.closest('[data-plan-freeze]');
@@ -2200,7 +2564,10 @@
     $('#command-search').addEventListener('input', (event) => renderCommandResults(event.target.value));
     $('#command-search').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); const first = $('#command-results button'); if (first) first.click(); else { closeCommand(); showView('research'); } } });
     $('#command-results').addEventListener('click', (event) => { const view = event.target.closest('[data-command-view]')?.dataset.commandView; const symbol = event.target.closest('[data-command-symbol]')?.dataset.commandSymbol; const plan = event.target.closest('[data-command-plan]')?.dataset.commandPlan; if (view) { closeCommand(); showView(view); } if (symbol) { closeCommand(); openResearch(symbol); } if (plan) { closeCommand(); openPlanDetail(plan); } });
-    document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openCommand(); } if (event.key === 'Escape') { closeCommand(); closeWorkspaceModal(); closeDrawers(); closeSidebar(); } });
+    document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openCommand(); } if (event.key === 'Escape') { closeCommand(); closeWorkspaceModal(); closeDrawers(); closeSidebar(); closeUserMenu(); } });
+    document.addEventListener('click', (event) => { if (!event.target.closest('.user-menu-wrap')) closeUserMenu(); });
+    $('#user-menu-trigger').addEventListener('click', toggleUserMenu);
+    $('#logout-button').addEventListener('click', logout);
     $('#jobs-trigger').addEventListener('click', () => openDrawer('jobs-drawer'));
     $('#close-jobs').addEventListener('click', closeDrawers);
     $('#notifications-trigger').addEventListener('click', () => { $('#alert-symbol').value = state.symbol || ''; updateAlertFields(); renderAlerts(); openDrawer('alerts-drawer'); });
@@ -2247,6 +2614,8 @@
   }
 
   async function init() {
+    applyClearPageTitles();
+    if (!await loadAuthSession()) return;
     applyBrandConfig(state.brand);
     renderWorkspaceContext();
     const today = new Date();

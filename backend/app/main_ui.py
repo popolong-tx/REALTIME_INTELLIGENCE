@@ -1,22 +1,24 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import logging
 import os
 
-from app.api import stocks, search, models, recommendations, user, governance, platform, intelligence
+from app.api import auth, stocks, search, models, recommendations, user, governance, platform, intelligence
 from app.api import broker, webhooks
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.session_auth import SessionAuthenticationMiddleware
+from app.services.login_service import SESSION_COOKIE_NAME, login_service
 from app.services.intelligence_monitoring_service import intelligence_monitoring_service
 from app.services.capability_status_service import build_readiness_report
 
 logger = logging.getLogger(__name__)
 
-UI_RUNTIME_VERSION = "2026.08.24.15"
+UI_RUNTIME_VERSION = "2026.08.25.25"
 APP_STARTED_AT = datetime.now(timezone.utc).isoformat()
 
 # Resolve the product shell from the repository root so the same layout works
@@ -25,8 +27,9 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend", "public")
 FRONTEND_ASSETS_DIR = os.path.join(FRONTEND_DIR, "assets")
 INDEX_FILE = os.path.join(FRONTEND_DIR, "index.html")
+LOGIN_FILE = os.path.join(FRONTEND_DIR, "login.html")
 
-if not os.path.isfile(INDEX_FILE) or not os.path.isdir(FRONTEND_ASSETS_DIR):
+if not os.path.isfile(INDEX_FILE) or not os.path.isfile(LOGIN_FILE) or not os.path.isdir(FRONTEND_ASSETS_DIR):
     raise RuntimeError(
         "Frontend product shell is incomplete. Expected index.html and assets/ "
         f"under {FRONTEND_DIR}."
@@ -68,11 +71,16 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        origin.strip()
+        for origin in settings.CORS_ALLOWED_ORIGINS.split(",")
+        if origin.strip()
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SessionAuthenticationMiddleware)
 
 # Serve the dependency-free product shell assets. Keeping these files behind the
 # same origin as the API avoids hard-coded localhost URLs and works in containers.
@@ -83,6 +91,7 @@ app.mount(
 )
 
 # Include routers
+app.include_router(auth.router)
 app.include_router(stocks.router)
 app.include_router(search.router)
 app.include_router(models.router)
@@ -93,6 +102,14 @@ app.include_router(platform.router)
 app.include_router(intelligence.router)
 app.include_router(broker.router)
 app.include_router(webhooks.router)
+
+
+@app.get("/login")
+async def login_page(request: Request):
+    """Serve the login screen or return an active session to the product."""
+    if login_service.session_username(request.cookies.get(SESSION_COOKIE_NAME)):
+        return RedirectResponse(url="/", status_code=303)
+    return FileResponse(LOGIN_FILE, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/")

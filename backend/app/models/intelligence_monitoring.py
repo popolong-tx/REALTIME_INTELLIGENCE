@@ -46,6 +46,11 @@ class IntelligenceMonitor(Base):
         back_populates="monitor",
         cascade="all, delete-orphan",
     )
+    reports = relationship(
+        "IntelligenceReportArtifact",
+        back_populates="monitor",
+        cascade="all, delete-orphan",
+    )
 
 
 class IntelligenceMonitorRun(Base):
@@ -68,3 +73,67 @@ class IntelligenceMonitorRun(Base):
     completed_at = Column(DateTime)
 
     monitor = relationship("IntelligenceMonitor", back_populates="runs")
+    report = relationship(
+        "IntelligenceReportArtifact",
+        back_populates="run",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+class IntelligenceReportArtifact(Base):
+    """Immutable PDF artifact generated from one completed monitor run."""
+
+    __tablename__ = "intelligence_report_artifacts"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    workspace_id = Column(String, nullable=False, index=True)
+    monitor_id = Column(
+        String,
+        ForeignKey("intelligence_monitors.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    run_id = Column(
+        String,
+        ForeignKey("intelligence_monitor_runs.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    workflow = Column(String, nullable=False, index=True)
+    trigger = Column(String, nullable=False)
+    source_request_id = Column(String, index=True)
+    filename = Column(String, nullable=False)
+    storage_path = Column(Text, nullable=False)
+    content_type = Column(String, nullable=False, default="application/pdf")
+    byte_size = Column(Integer, nullable=False)
+    sha256 = Column(String, nullable=False)
+    query_context = Column(JSON, nullable=False, default=dict)
+    generated_at = Column(DateTime, nullable=False, default=utcnow_naive, index=True)
+
+    monitor = relationship("IntelligenceMonitor", back_populates="reports")
+    run = relationship("IntelligenceMonitorRun", back_populates="report")
+
+
+class IntelligenceAnalysisRecord(Base):
+    """Immutable snapshot of one usable intelligence analysis.
+
+    The record deliberately does not cascade with a monitor. Removing a
+    schedule must not erase the analysis that was produced while it existed.
+    """
+
+    __tablename__ = "intelligence_analysis_records"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    workspace_id = Column(String, nullable=False, index=True, default="personal")
+    workflow = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    trigger = Column(String, nullable=False, default="manual", index=True)
+    monitor_id = Column(String, index=True)
+    run_id = Column(String, unique=True, index=True)
+    source_request_id = Column(String, index=True)
+    query_context = Column(JSON, nullable=False, default=dict)
+    result = Column(JSON, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=utcnow_naive, index=True)

@@ -112,3 +112,19 @@ The open platform SHALL keep broker or embedded-investing execution behind a sep
 - **WHEN** a broker adapter is installed but the workspace lacks execution approval
 - **THEN** the platform exposes simulation and connectivity health only
 - **AND** rejects live order requests
+
+### Requirement: Responsive and task-oriented interface
+The product shell and login experience SHALL remain usable in current phone, tablet and desktop browser sizes and SHALL identify each primary page by its user task.
+
+#### Scenario: Phone browser
+- **WHEN** the viewport is 680 CSS pixels wide or narrower
+- **THEN** navigation moves to an accessible drawer, primary content uses one-column flow, tables remain horizontally reachable and critical controls keep touch-sized targets
+
+#### Scenario: Tablet browser
+- **WHEN** the viewport is between phone and desktop breakpoints
+- **THEN** the sidebar becomes a drawer and analysis workbenches collapse without clipping forms, results or account controls
+
+#### Scenario: Clear page naming
+- **WHEN** a user opens a primary workflow
+- **THEN** the first heading names the task, such as “检索实时公开信息” or “监测项目实时风险”
+- **AND** supporting copy explains scope and limitations instead of replacing the page name with a slogan

@@ -10,7 +10,7 @@
 
 - 🔍 **智能股票搜索** - 支持美股、港股、A股等多市场
 - 💡 **AI 交易建议** - 基于量化模型的买卖建议
-- 🤖 **Grok 情报分析** - 实时 X/Web 信息检索与风险监测
+- 🤖 **Grok 中文情报分析** - 以简体中文呈现实时 X/Web 检索、项目风险与地缘融资推演，并保留可核验的 X 原文
 - 📈 **模型训练管理** - 量化模型训练、回测与版本管理
 - 🔗 **Webhook 集成** - 支持 TradingView 等外部信号
 - 🏦 **券商接入** - 长桥证券 API 集成（模拟模式）
@@ -30,7 +30,7 @@ cd Grok_Quant_Demo
 ```bash
 cd backend
 cp .env.example .env
-# 编辑 .env 文件，配置 Grok API Key
+# 编辑 .env 文件，配置登录账号、会话密钥和 Grok API Key
 ```
 
 ### 3. 启动服务
@@ -56,7 +56,23 @@ python -m uvicorn app.main_ui:app --host 0.0.0.0 --port 8000
 | 💚 健康检查 | http://localhost:8000/health |
 | 📊 系统状态 | http://localhost:8000/api/v1/status |
 
+首次访问会进入登录页；除健康检查和登录接口外，产品页面与业务 API 都需要有效会话。
+
 ## ⚙️ 配置说明
+
+### 登录配置
+
+在 `backend/.env` 中配置本地测试账号。含 `#`、空格等特殊字符的密码必须放在双引号内；不要把真实凭据提交到代码仓库。
+
+```env
+APP_LOGIN_USERNAME=admin
+APP_LOGIN_PASSWORD="replace-with-a-strong-password"
+AUTH_SESSION_SECRET=replace-with-a-long-random-secret
+AUTH_SESSION_HOURS=12
+AUTH_COOKIE_SECURE=false
+```
+
+本地 HTTP 测试使用 `AUTH_COOKIE_SECURE=false`；部署到 HTTPS 环境时必须改为 `true`。当前单账号登录用于本地演示，机构生产环境仍需接入 SSO/SCIM、MFA、角色权限、租户隔离和会话撤销。
 
 ### Grok API 配置
 
@@ -125,6 +141,9 @@ POST /api/v1/recommendations/generate-plan  # 生成交易计划
 POST /api/v1/intelligence/realtime/search   # 实时信息检索
 POST /api/v1/intelligence/project-risk/analyze  # 项目风险分析
 POST /api/v1/intelligence/geopolitical-impact/analyze  # 地缘融资推演
+GET  /api/v1/intelligence/history  # 按工作区与类型查看分析历史
+GET  /api/v1/intelligence/history/{id}  # 读取当时保存的完整结果
+GET  /api/v1/intelligence/history/{id}/pdf  # 导出当时结果，不重新查询 Grok
 ```
 
 ### 模型管理

@@ -1,3 +1,13 @@
-from app.models.intelligence_monitoring import IntelligenceMonitor, IntelligenceMonitorRun
+from app.models.intelligence_monitoring import (
+    IntelligenceAnalysisRecord,
+    IntelligenceMonitor,
+    IntelligenceMonitorRun,
+    IntelligenceReportArtifact,
+)
 
-__all__ = ["IntelligenceMonitor", "IntelligenceMonitorRun"]
+__all__ = [
+    "IntelligenceAnalysisRecord",
+    "IntelligenceMonitor",
+    "IntelligenceMonitorRun",
+    "IntelligenceReportArtifact",
+]

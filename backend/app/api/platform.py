@@ -36,9 +36,9 @@ async def get_platform_manifest():
     ]
 
     return {
-        "schema_version": "2026-08-24",
+        "schema_version": "2026-08-25",
         "platform": {
-            "name": "Nexus Quant",
+            "name": "Grok Demo",
             "edition": "Open Platform Foundation",
             "deployment": "local",
             "execution_mode": settings.EXECUTION_MODE,
@@ -110,7 +110,15 @@ async def get_platform_manifest():
                 "category": "event",
                 "status": "available",
                 "scope": "workspace",
-                "contract": "persistent interval monitor + execution history + pause/resume + run-now",
+                "contract": "persistent interval monitor + execution history + automatic PDF artifact + pause/resume + run-now",
+            },
+            {
+                "id": "intelligence-history",
+                "name": "情报分析历史",
+                "category": "intelligence",
+                "status": "available",
+                "scope": "workspace",
+                "contract": "immutable input/output snapshot + workspace-scoped list/detail + exact historical PDF export without re-query",
             },
             {
                 "id": "model-runtime",
@@ -176,7 +184,7 @@ async def get_platform_manifest():
                 "status": "available" if settings.OCI_GENAI_API_KEY else "needs_configuration",
                 "workspaces": ["institution", "custom", "personal"],
                 "model": settings.OCI_GROK_MODEL_ID,
-                "requires": ["oci-grok", "web_search", "x_search", "code_interpreter", "citation_ledger", "intelligence-scheduler"],
+                "requires": ["oci-grok", "web_search", "x_search", "code_interpreter", "citation_ledger", "intelligence-scheduler", "intelligence-history", "pdf-export"],
             },
             {
                 "id": "project-risk-intelligence",
@@ -184,7 +192,7 @@ async def get_platform_manifest():
                 "status": "available" if settings.OCI_GENAI_API_KEY else "needs_configuration",
                 "workspaces": ["institution", "custom", "personal"],
                 "model": settings.OCI_GROK_MODEL_ID,
-                "requires": ["oci-grok", "web_search", "x_search", "code_interpreter", "citation_ledger", "intelligence-scheduler"],
+                "requires": ["oci-grok", "web_search", "x_search", "code_interpreter", "citation_ledger", "intelligence-scheduler", "intelligence-history", "pdf-export"],
             },
             {
                 "id": "geopolitical-financing",
@@ -192,7 +200,7 @@ async def get_platform_manifest():
                 "status": "available" if settings.OCI_GENAI_API_KEY else "needs_configuration",
                 "workspaces": ["institution", "custom", "personal"],
                 "model": settings.OCI_GROK_MULTI_AGENT_MODEL_ID,
-                "requires": ["oci-grok", "web_search", "x_search", "code_interpreter", "citation_ledger", "scenario_governance"],
+                "requires": ["oci-grok", "web_search", "x_search", "code_interpreter", "citation_ledger", "scenario_governance", "intelligence-history", "pdf-export"],
             },
         ],
         "deployment_profiles": [
@@ -225,6 +233,7 @@ async def get_platform_manifest():
                 "project monitors",
                 "realtime research monitors",
                 "intelligence monitor runs",
+                "intelligence analysis history",
                 "institutional intelligence briefs",
                 "models",
                 "plans",

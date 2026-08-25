@@ -485,7 +485,7 @@ class RecommendationEngine:
                 symbol,
                 stock_info,
             )
-            return result.get("analysis", "Analysis not available")
+            return result.get("analysis", "暂未返回可用分析")
         except Exception as e:
             logger.error(f"Error generating reasoning: {e}")
             # Fallback to simple reasoning
@@ -504,23 +504,23 @@ class RecommendationEngine:
         reasoning_parts = []
 
         if technical.get("overall_signal") == "bullish":
-            reasoning_parts.append("Technical indicators show bullish momentum")
+            reasoning_parts.append("技术指标显示上涨动能")
         elif technical.get("overall_signal") == "bearish":
-            reasoning_parts.append("Technical indicators show bearish momentum")
+            reasoning_parts.append("技术指标显示下跌动能")
 
         if sentiment.get("overall_sentiment") == "positive":
-            reasoning_parts.append("Market sentiment is positive")
+            reasoning_parts.append("市场情绪偏正面")
         elif sentiment.get("overall_sentiment") == "negative":
-            reasoning_parts.append("Market sentiment is negative")
+            reasoning_parts.append("市场情绪偏负面")
 
         if recommendation == RecommendationType.BUY:
-            reasoning_parts.append("Overall analysis suggests buying opportunity")
+            reasoning_parts.append("综合分析显示存在买入机会")
         elif recommendation == RecommendationType.SELL:
-            reasoning_parts.append("Overall analysis suggests selling")
+            reasoning_parts.append("综合分析显示应考虑卖出")
         else:
-            reasoning_parts.append("Overall analysis suggests holding position")
+            reasoning_parts.append("综合分析显示应继续持有并观察")
 
-        return ". ".join(reasoning_parts) + "."
+        return "。".join(reasoning_parts) + "。"
 
     def _collect_citations(
         self,
@@ -541,7 +541,7 @@ class RecommendationEngine:
         # News citations
         for news in news_data.get("news", [])[:3]:
             citations.append({
-                "source": news.get("source", "Unknown"),
+                "source": news.get("source", "未知来源"),
                 "url": news.get("url"),
                 "title": news.get("title"),
                 "published_at": news.get("published_at"),

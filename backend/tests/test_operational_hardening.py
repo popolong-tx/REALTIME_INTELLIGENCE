@@ -1,11 +1,13 @@
 """Regression tests for the functionality gaps found in the runtime audit."""
 
 import asyncio
+from contextlib import contextmanager
 
 import numpy as np
 from fastapi.testclient import TestClient
 
 from app.core.database import init_db
+from app.core.config import settings
 from app.main_ui import app
 from app.services.audit_trail_service import (
     AuditEventType,
@@ -18,6 +20,20 @@ from app.services.webhook_service import (
     WebhookEventType,
     WebhookService,
 )
+
+
+@contextmanager
+def authenticated_client():
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/auth/login",
+            json={
+                "username": settings.APP_LOGIN_USERNAME,
+                "password": settings.APP_LOGIN_PASSWORD,
+            },
+        )
+        assert response.status_code == 200, response.text
+        yield client
 
 
 def synthetic_training_data():
@@ -43,7 +59,7 @@ def synthetic_training_data():
 
 
 def test_simulation_policy_blocks_live_order_and_is_reported():
-    with TestClient(app) as client:
+    with authenticated_client() as client:
         response = client.post(
             "/api/v1/broker/order",
             json={
@@ -62,7 +78,7 @@ def test_simulation_policy_blocks_live_order_and_is_reported():
 
 
 def test_emergency_shutdown_blocks_mutations_and_recovery_restores_gate():
-    with TestClient(app) as client:
+    with authenticated_client() as client:
         initiated = client.post(
             "/api/v1/governance/shutdown/initiate",
             json={
@@ -138,7 +154,7 @@ def test_model_evaluation_and_fine_tuning_execute_real_services(monkeypatch, tmp
     monkeypatch.setattr(model_training_service, "models_dir", str(tmp_path))
     monkeypatch.setattr(model_fine_tuning_service, "models_dir", str(tmp_path))
 
-    with TestClient(app) as client:
+    with authenticated_client() as client:
         created = client.post(
             "/api/v1/models/",
             json={"name": "real execution probe", "model_type": "linear_regression"},
@@ -176,10 +192,11 @@ def test_model_evaluation_and_fine_tuning_execute_real_services(monkeypatch, tmp
 
 
 def test_status_exposes_module_maturity_instead_of_boolean_flags():
-    with TestClient(app) as client:
+    with authenticated_client() as client:
         response = client.get("/api/v1/status")
         assert response.status_code == 200
         payload = response.json()
+        assert payload["features"]["authentication"]["status"] == "operational"
         assert payload["features"]["audit_trail"]["status"] == "operational"
         assert payload["features"]["saved_plans"]["persistence"] == "database"
         assert payload["features"]["broker_execution"]["status"] == "simulation_only"

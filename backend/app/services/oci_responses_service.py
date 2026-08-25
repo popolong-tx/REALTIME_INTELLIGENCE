@@ -219,11 +219,11 @@ class OCIResponsesService:
                 if not any(tool["type"] in {"web_search", "x_search"} for tool in next_tools):
                     raise
                 compatibility_warnings.append(
-                    f"Provider rejected {rejected_tool}; retried with the remaining approved tools."
+                    f"服务提供方不支持 {rejected_tool}；已改用其余可用工具重试。"
                 )
                 attempt_tools = next_tools
 
-        raise RuntimeError("No compatible real-time research tool combination succeeded")
+        raise RuntimeError("没有可用的实时研究工具组合，无法完成检索。")
 
     async def search_x(
         self,
@@ -243,15 +243,15 @@ class OCIResponsesService:
             tool["allowed_x_handles"] = allowed_x_handles
 
         prompt = (
-            f"Search X for: {query}. Return at most {max_results} highly relevant "
-            "public items. Separate verifiable facts from opinions and from claims "
-            "about a person's trades. Keep the original source citations."
+            f"在 X 上检索：{query}。最多返回 {max_results} 条高度相关的公开内容。"
+            "使用简体中文总结检索结果，并把可验证事实、观点和个人交易声明明确分开。"
+            "保留原始来源引用；X 帖子原文不得翻译或改写。"
         )
         return await self.generate_text(
             prompt=prompt,
             system_prompt=(
-                "You are a financial research assistant. Public posts are research "
-                "evidence, not verified trades or investment instructions."
+                "你是一名金融研究助理。除 X 原文、URL、股票代码和专有名词外，所有回复必须使用简体中文。"
+                "公开帖子只是研究证据，并非已经验证的交易或投资指令。"
             ),
             temperature=0.2,
             max_tokens=2500,
@@ -265,29 +265,29 @@ class OCIResponsesService:
         system_prompt: Optional[str] = None,
     ) -> Dict[str, Any]:
         context_text = "\n\n".join(
-            f"Source: {item.get('source', 'Unknown')}\n{item.get('content', '')}"
+            f"来源：{item.get('source', '未知')}\n{item.get('content', '')}"
             for item in context
         )
         return await self.generate_text(
-            prompt=f"Context:\n{context_text}\n\nQuestion: {query}",
+            prompt=f"上下文：\n{context_text}\n\n问题：{query}\n\n请使用简体中文回答。",
             system_prompt=system_prompt
-            or "Answer only from the supplied financial research context.",
+            or "仅依据提供的金融研究上下文回答；所有面向用户的内容必须使用简体中文。",
         )
 
     async def summarize_text(self, text: str, max_length: int = 200) -> Dict[str, Any]:
         return await self.generate_text(
-            prompt=f"Summarize in at most {max_length} words:\n\n{text}",
-            system_prompt="Provide a concise, factual summary.",
+            prompt=f"请用不超过 {max_length} 个汉字进行摘要：\n\n{text}",
+            system_prompt="提供简洁、准确的简体中文摘要，不增加原文没有的事实。",
             max_tokens=max_length * 2,
         )
 
     async def analyze_sentiment(self, text: str) -> Dict[str, Any]:
         result = await self.generate_text(
             prompt=(
-                "Classify sentiment as positive, negative, or neutral; give a "
-                f"0-1 confidence and supporting phrases. Text:\n{text}"
+                "将情绪分类为正面、中性或负面，给出 0-1 置信度和支持判断的原文片段。"
+                f"使用简体中文回答。文本：\n{text}"
             ),
-            system_prompt="Return a compact financial-sentiment analysis.",
+            system_prompt="返回简洁的简体中文金融情绪分析。",
             temperature=0.2,
         )
         return {
@@ -299,10 +299,10 @@ class OCIResponsesService:
     async def extract_entities(self, text: str) -> Dict[str, Any]:
         result = await self.generate_text(
             prompt=(
-                "Extract company names, stock symbols, financial metrics, dates, "
-                f"and monetary amounts from:\n{text}"
+                "从下列文本提取公司名称、股票代码、金融指标、日期和金额；"
+                f"字段说明使用简体中文：\n{text}"
             ),
-            system_prompt="Return a structured financial entity list.",
+            system_prompt="返回结构化的金融实体清单，说明文字使用简体中文。",
             temperature=0.1,
         )
         return {

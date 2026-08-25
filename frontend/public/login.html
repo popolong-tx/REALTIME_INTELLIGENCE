@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07110f">
+  <meta name="description" content="Grok Demo 实时决策情报分析登录">
+  <title>登录 · Grok Demo</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307110f'/%3E%3Cpath d='M16 42V29m10 13V18m11 24V25m11 17V13' stroke='%23bcf26d' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/assets/login.css?v=20260825.19">
+  <script src="/assets/login.js?v=20260825.19" defer></script>
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-intro" aria-labelledby="product-title">
+      <div class="login-brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><strong>Grok Demo</strong><small>REALTIME INTELLIGENCE</small></div></div>
+      <div class="intro-copy">
+        <p class="eyebrow">实时决策情报分析</p>
+        <h1 id="product-title">实时信息与风险分析</h1>
+        <p>汇集 X 与公共开放信息，持续监测项目风险，并使用 Grok 推演地缘政治对融资的影响。</p>
+      </div>
+      <div class="intro-features" aria-label="平台能力">
+        <article><span>01</span><div><strong>实时公开信息</strong><small>X、公共网页与来源账本</small></div></article>
+        <article><span>02</span><div><strong>项目风险监测</strong><small>定时检索与自动 PDF 报告</small></div></article>
+        <article><span>03</span><div><strong>融资影响推演</strong><small>多情景推理与可审计结论</small></div></article>
+      </div>
+      <p class="intro-foot">研究与风险决策支持 · 不连接实盘交易</p>
+    </section>
+
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="mobile-brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><strong>Grok Demo</strong><small>实时决策情报分析</small></div></div>
+      <div class="login-card">
+        <header><p class="eyebrow">安全访问</p><h2 id="login-title">登录系统</h2><p>使用管理员提供的测试账号继续。</p></header>
+        <form id="login-form" novalidate>
+          <label>用户名<input id="login-username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="120" placeholder="请输入用户名"></label>
+          <label>密码<span class="password-field"><input id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="512" placeholder="请输入密码"><button id="toggle-password" type="button" aria-label="显示密码" aria-pressed="false">显示</button></span></label>
+          <div class="login-message" id="login-message" role="alert" aria-live="polite"></div>
+          <button class="login-button" id="login-submit" type="submit"><span>登录</span><i aria-hidden="true">→</i></button>
+        </form>
+        <div class="login-note"><span aria-hidden="true">✓</span><p><strong>凭据仅由服务端验证</strong><small>用户名和密码从服务器环境变量读取，不会写入网页或浏览器存储。</small></p></div>
+      </div>
+      <p class="panel-foot">本地测试系统 · 登录活动写入审计记录</p>
+    </section>
+  </main>
+</body>
+</html>

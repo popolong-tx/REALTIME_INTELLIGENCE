@@ -29,7 +29,7 @@ class XSearchService:
         X opinions and claimed trades remain unverified. Citation URLs are
         normalized into the legacy ``tweets`` shape for existing API callers.
         """
-        cache_key = f"x_search:{query}:{max_results}:{start_time}:{end_time}"
+        cache_key = f"x_search:zh-cn-v1:{query}:{max_results}:{start_time}:{end_time}"
         cached = cache.get(cache_key)
         if cached:
             return cached

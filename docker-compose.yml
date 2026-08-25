@@ -41,6 +41,8 @@ services:
     container_name: quant_advisor_api
     ports:
       - "8000:8000"
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/quant_advisor
       - REDIS_URL=redis://redis:6379/0

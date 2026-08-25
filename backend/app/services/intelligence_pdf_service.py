@@ -24,6 +24,7 @@ from reportlab.platypus import (
     LongTable,
     PageBreak,
     Paragraph,
+    KeepTogether,
     SimpleDocTemplate,
     Spacer,
     Table,
@@ -85,6 +86,42 @@ class IntelligencePdfService:
         "horizon": "决策周期",
         "decision_question": "管理层决策问题",
         "workspace_id": "工作区",
+    }
+
+    TOKEN_LABELS = {
+        "x": "X 公开内容",
+        "public": "公共网页",
+        "rising": "上升",
+        "stable": "稳定",
+        "falling": "下降",
+        "unknown": "未知",
+        "low": "低",
+        "moderate": "中等",
+        "high": "高",
+        "critical": "严重",
+        "unrated": "未评级",
+        "continue": "继续并保持监测",
+        "adjust_terms": "调整融资条款",
+        "pause_for_review": "暂停并专项复核",
+        "accelerate": "满足条件后加速",
+        "escalate": "升级至管理层",
+        "now": "立即",
+        "7_days": "7 天内",
+        "30_days": "30 天内",
+        "monitor": "持续监测",
+        "quarter": "本季度",
+        "baseline": "基准情景",
+        "stress": "压力情景",
+        "opportunity": "机会情景",
+        "medium": "中等",
+        "source_available": "来源可访问",
+        "verified_source": "来源已核验",
+        "reported_claim": "媒体转述",
+        "opinion": "公开观点",
+        "unverified": "未验证",
+        "sourced": "有来源",
+        "inference": "模型推断",
+        "uncertain": "不确定",
     }
 
     DARK = colors.HexColor("#07110F")
@@ -342,7 +379,7 @@ class IntelligencePdfService:
             ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
         ]))
         story.extend([status_table, Spacer(1, 7 * mm)])
-        story.extend(self._section_title("ANALYSIS SCOPE", "分析范围"))
+        story.extend(self._section_title("报告范围", "分析范围"))
         scope_rows = []
         for key, label in self.SCOPE_LABELS.items():
             if key not in query_context or query_context.get(key) in (None, "", []):
@@ -358,13 +395,13 @@ class IntelligencePdfService:
         counts = result.get("counts") or {}
         story: List[Any] = []
         story.extend(self._summary_block(
-            "RESEARCH READOUT",
+            "研究结论",
             "实时信息综述",
             analysis.get("executive_summary"),
             analysis.get("coverage_note") or "结果为尽力覆盖，不代表 X 或公共网络的全量导出。",
             self.AMBER,
         ))
-        story.extend(self._section_title("COVERAGE", "检索覆盖"))
+        story.extend(self._section_title("覆盖说明", "检索覆盖"))
         story.append(self._key_value_table([
             ["X 内容", counts.get("x", 0)],
             ["公共网页", counts.get("public", 0)],
@@ -373,11 +410,11 @@ class IntelligencePdfService:
         ], label_width=34 * mm))
 
         trends = analysis.get("trends") or []
-        story.extend(self._section_title("TREND SIGNALS", "主题与趋势"))
+        story.extend(self._section_title("趋势信号", "主题与趋势"))
         story.append(self._data_table(
             ["趋势", "方向", "证据依据", "来源映射"],
             [[
-                item.get("label"), item.get("direction"), item.get("evidence"),
+                item.get("label"), self._token(item.get("direction")), item.get("evidence"),
                 item.get("source_refs") or "未映射",
             ] for item in trends[:MAX_SECTION_ITEMS]],
             [31 * mm, 19 * mm, 80 * mm, 47 * mm],
@@ -385,16 +422,18 @@ class IntelligencePdfService:
         ))
 
         items = result.get("items") or analysis.get("items") or []
-        story.extend(self._section_title("RETRIEVED ITEMS", "原始信息流"))
+        story.extend(self._section_title("检索结果", "原始信息流"))
         item_rows = []
         for item in items[:MAX_SECTION_ITEMS]:
             body = item.get("original_text") or item.get("content_excerpt") or "未返回可验证正文"
+            if item.get("source_type") == "x" and item.get("original_text") and item.get("content_excerpt"):
+                body = f"X 原文：\n{item.get('original_text')}\n\n中文说明：\n{item.get('content_excerpt')}"
             item_rows.append([
-                str(item.get("source_type") or "public").upper(),
-                item.get("author") or "unknown",
-                item.get("published_at") or "unknown",
+                self._token(item.get("source_type") or "public"),
+                item.get("author") or "未知发布者",
+                item.get("published_at") or "时间未知",
                 f"{item.get('title') or '未命名来源'}\n{body}",
-                item.get("evidence_status") or "unverified",
+                self._token(item.get("evidence_status") or "unverified"),
             ])
         story.append(self._data_table(
             ["通道", "作者 / 发布方", "时间", "原文 / 摘要", "证据状态"],
@@ -402,80 +441,80 @@ class IntelligencePdfService:
             [14 * mm, 29 * mm, 28 * mm, 81 * mm, 25 * mm],
             empty="本次没有返回可导出的原始信息条目。",
         ))
-        story.extend(self._simple_list("UNKNOWNS", "未知项", analysis.get("unknowns") or []))
+        story.extend(self._simple_list("重要未知项", "未知项", analysis.get("unknowns") or []))
         return story
 
     def _project_risk_sections(self, result: Dict[str, Any]) -> List[Any]:
         analysis = result.get("analysis") or {}
         story: List[Any] = []
         story.extend(self._summary_block(
-            "RISK BRIEF",
+            "风险结论",
             "管理层风险简报",
             analysis.get("executive_summary"),
             analysis.get("direct_assessment") or "本次没有形成直接判断，需人工检查来源。",
             self.AMBER,
         ))
-        story.extend(self._section_title("RISK RADAR", "五维风险与趋势"))
+        story.extend(self._section_title("风险雷达", "五维风险与趋势"))
         story.append(self._data_table(
             ["维度", "评分", "等级", "趋势", "依据"],
             [[
                 item.get("label") or item.get("dimension"), item.get("score", "未评级"),
-                item.get("level") or "unrated", item.get("trend") or "unknown",
+                self._token(item.get("level") or "unrated"), self._token(item.get("trend") or "unknown"),
                 item.get("rationale") or "未提供",
             ] for item in (analysis.get("risk_dimensions") or [])[:MAX_SECTION_ITEMS]],
             [30 * mm, 15 * mm, 21 * mm, 20 * mm, 91 * mm],
             empty="本次没有足够证据形成风险评分。",
         ))
-        story.extend(self._section_title("GROUND SIGNALS", "事件与舆情时间线"))
+        story.extend(self._section_title("实时信号", "事件与舆情时间线"))
         story.append(self._data_table(
             ["时间", "事件", "证据状态", "项目影响", "来源映射"],
             [[
-                item.get("observed_at") or "unknown", item.get("title"),
-                item.get("evidence_status") or "unverified", item.get("impact"),
+                item.get("observed_at") or "时间未知", item.get("title"),
+                self._token(item.get("evidence_status") or "unverified"), item.get("impact"),
                 item.get("source_refs") or "未映射",
             ] for item in (analysis.get("events") or [])[:MAX_SECTION_ITEMS]],
             [23 * mm, 37 * mm, 25 * mm, 58 * mm, 34 * mm],
             empty="本次没有可展示的实时事件。",
         ))
-        story.extend(self._section_title("DECISION OPTIONS", "建议复核动作"))
+        story.extend(self._section_title("决策选项", "建议复核动作"))
         story.append(self._data_table(
             ["动作", "紧迫度", "负责人", "可观察触发条件", "判断依据"],
             [[
-                item.get("action"), item.get("urgency"), item.get("owner"),
+                self._token(item.get("action")), self._token(item.get("urgency")), item.get("owner"),
                 item.get("trigger"), item.get("rationale"),
             ] for item in (analysis.get("decision_options") or [])[:MAX_SECTION_ITEMS]],
             [24 * mm, 20 * mm, 25 * mm, 50 * mm, 58 * mm],
             empty="本次没有形成复核动作。",
         ))
-        story.extend(self._simple_list("WATCH ITEMS", "后续观察项", analysis.get("watch_items") or []))
-        story.extend(self._simple_list("ASSUMPTIONS", "关键假设", analysis.get("assumptions") or []))
+        story.extend(self._simple_list("持续观察", "后续观察项", analysis.get("watch_items") or []))
+        story.extend(self._simple_list("分析假设", "关键假设", analysis.get("assumptions") or []))
         return story
 
     def _geopolitical_sections(self, result: Dict[str, Any]) -> List[Any]:
         analysis = result.get("analysis") or {}
         story: List[Any] = []
         story.extend(self._summary_block(
-            "STRATEGIC READOUT",
+            "战略结论",
             "战略直读",
             analysis.get("executive_summary"),
             analysis.get("direct_assessment") or "本次没有形成直接判断，需人工检查来源和假设。",
             self.PURPLE,
         ))
-        story.extend(self._section_title("CAUSAL TRANSMISSION", "融资影响传导链"))
+        story.extend(self._section_title("因果传导", "融资影响传导链"))
         story.append(self._data_table(
             ["驱动因素", "传导机制", "融资后果", "受影响方", "证据状态"],
             [[
                 item.get("driver"), item.get("mechanism"), item.get("financing_effect"),
-                item.get("affected_parties") or "待识别", item.get("evidence_status") or "uncertain",
+                item.get("affected_parties") or "待识别", self._token(item.get("evidence_status") or "uncertain"),
             ] for item in (analysis.get("transmission_paths") or [])[:MAX_SECTION_ITEMS]],
             [31 * mm, 54 * mm, 44 * mm, 27 * mm, 21 * mm],
             empty="本次没有形成可验证的传导链。",
         ))
-        story.extend(self._section_title("SCENARIOS", "融资情景推演"))
+        story.extend(self._section_title("情景分析", "融资情景推演"))
         story.append(self._data_table(
             ["情景 / 概率", "项目管道", "联合融资", "借贷意愿", "可行性", "风险转移", "早期信号"],
             [[
-                f"{item.get('name') or 'scenario'} / {item.get('probability') or '未量化'}",
+                f"{self._token(item.get('name') or '情景')} / {self._token(item.get('probability') or '未量化')}",
                 item.get("pipeline_impact"), item.get("cofinancing_impact"),
                 item.get("borrowing_appetite"), item.get("feasibility"),
                 item.get("risk_transfer"), item.get("early_signals") or "未识别",
@@ -483,7 +522,7 @@ class IntelligencePdfService:
             [25 * mm, 27 * mm, 25 * mm, 25 * mm, 25 * mm, 25 * mm, 25 * mm],
             empty="本次没有形成基准、压力或机会情景。",
         ))
-        story.extend(self._section_title("DECISION OPTIONS", "策略选择与代价"))
+        story.extend(self._section_title("决策选项", "策略选择与代价"))
         story.append(self._data_table(
             ["策略", "收益", "代价", "负责人 / 时机", "触发条件"],
             [[
@@ -494,8 +533,8 @@ class IntelligencePdfService:
             [32 * mm, 41 * mm, 41 * mm, 32 * mm, 31 * mm],
             empty="本次没有形成策略选项。",
         ))
-        story.extend(self._simple_list("ASSUMPTIONS", "关键假设", analysis.get("assumptions") or []))
-        story.extend(self._simple_list("UNKNOWNS", "未知项", analysis.get("unknowns") or []))
+        story.extend(self._simple_list("分析假设", "关键假设", analysis.get("assumptions") or []))
+        story.extend(self._simple_list("重要未知项", "未知项", analysis.get("unknowns") or []))
         return story
 
     def _evidence_and_audit(
@@ -506,15 +545,15 @@ class IntelligencePdfService:
         evidence = result.get("evidence") or []
         audit = result.get("audit") or {}
         story: List[Any] = [PageBreak()]
-        story.extend(self._section_title("SOURCE LEDGER", "来源账本"))
+        story.extend(self._section_title("证据来源", "来源账本"))
         source_rows = []
         for source in evidence[:MAX_SECTION_ITEMS]:
             url = self._clean(source.get("url") or "", 1400)
             source_rows.append([
                 source.get("id") or "-",
-                source.get("source_type") or "public",
+                self._token(source.get("source_type") or "public"),
                 source.get("title") or "未命名来源",
-                source.get("verification_status") or "unverified",
+                self._token(source.get("verification_status") or "unverified"),
                 self._link(url),
                 source.get("excerpt") or "",
             ])
@@ -526,7 +565,7 @@ class IntelligencePdfService:
             preformatted=True,
         ))
 
-        story.extend(self._section_title("AUDIT", "审计信息"))
+        story.extend(self._section_title("运行记录", "审计信息"))
         story.append(self._key_value_table([
             ["工作流", result.get("workflow")],
             ["提供方", audit.get("provider")],
@@ -587,10 +626,10 @@ class IntelligencePdfService:
         return story
 
     def _section_title(self, kicker: str, title: str) -> List[Any]:
-        return [
+        return [KeepTogether([
             self._paragraph(kicker, "kicker"),
             self._paragraph(title, "heading"),
-        ]
+        ])]
 
     def _callout(self, value: Any, background: colors.Color) -> Table:
         table = Table([[self._paragraph(value or "未提供", "callout")]], colWidths=[177 * mm])
@@ -684,6 +723,10 @@ class IntelligencePdfService:
         if isinstance(value, bool):
             return "是" if value else "否"
         return IntelligencePdfService._clean(value)
+
+    def _token(self, value: Any) -> str:
+        cleaned = self._clean(value, 300)
+        return self.TOKEN_LABELS.get(cleaned.lower(), cleaned)
 
     @staticmethod
     def _clean(value: Any, limit: int = 5000) -> str:

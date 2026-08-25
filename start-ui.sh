@@ -16,7 +16,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}Nexus Quant 量化交易建议系统${NC}"
+echo -e "${GREEN}Grok Demo 实时决策情报分析${NC}"
 echo -e "${GREEN}========================================${NC}"
 
 if [[ ! -x "$PYTHON_BIN" ]]; then
@@ -24,7 +24,7 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
     python3 -m venv "$BACKEND_DIR/venv"
 fi
 
-if ! "$PYTHON_BIN" -c "import fastapi, uvicorn, pydantic, pydantic_settings, sqlalchemy, yfinance, pandas, numpy, sklearn, joblib, httpx, requests, dotenv, jose, passlib" >/dev/null 2>&1; then
+if ! "$PYTHON_BIN" -c "import fastapi, uvicorn, pydantic, pydantic_settings, sqlalchemy, yfinance, pandas, numpy, sklearn, joblib, httpx, requests, dotenv, jose, passlib, reportlab" >/dev/null 2>&1; then
     echo -e "${YELLOW}检测到依赖不完整，正在补齐...${NC}"
     "$PYTHON_BIN" -m pip install -r "$BACKEND_DIR/requirements-ui.txt"
 fi

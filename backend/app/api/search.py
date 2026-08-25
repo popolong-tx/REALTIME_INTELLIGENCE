@@ -104,8 +104,8 @@ async def semantic_search(
     try:
         # Use OCI/Grok for semantic understanding
         result = await oci_responses_service.generate_text(
-            prompt=f"Search for: {query}\nContext: {context or 'N/A'}\n\nProvide relevant information and analysis.",
-            system_prompt="You are a financial research assistant. Provide comprehensive and accurate information.",
+            prompt=f"检索问题：{query}\n补充背景：{context or '无'}\n\n请提供相关信息与分析，并使用简体中文回答。",
+            system_prompt="你是一名金融研究助理。提供全面、准确的简体中文信息，不编造事实或来源。",
         )
 
         return {

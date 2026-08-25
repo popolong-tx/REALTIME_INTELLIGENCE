@@ -1,5 +1,611 @@
 # Errors
 
+## [ERR-20260825-088] browser_locator_scroll_helper_unavailable
+
+**Logged**: 2026-08-25T17:29:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The in-app browser locator API does not expose `scrollIntoViewIfNeeded` in this runtime.
+
+### Error
+```
+localTab.playwright.getByRole(...).scrollIntoViewIfNeeded is not a function
+```
+
+### Context
+- The operation was only intended to position the geopolitical scenario section for visual QA.
+- No application state or source code changed.
+
+### Suggested Fix
+Use the browser tab's supported page-scrolling operation or a visible navigation flow instead of locator scrolling.
+
+### Metadata
+- Reproducible: yes
+- Related Files: none
+
+### Resolution
+- **Resolved**: 2026-08-25T17:30:00+08:00
+- **Notes**: Continued diagnosis from the rendered DOM and source layout rules; the unsupported helper is not required for the fix.
+
+---
+
+## [ERR-20260825-087] browser_qa_redeclared_binding
+
+**Logged**: 2026-08-25T17:08:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The persistent browser QA session rejected a reused constant name from an earlier turn.
+
+### Error
+```
+Identifier 'geoSnap' has already been declared
+```
+
+### Context
+- The script failed before clicking or changing page state.
+- Persistent browser bindings can survive across turns.
+
+### Suggested Fix
+Use fresh uniquely named bindings, or declare reusable QA values with `var`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: none
+
+### Resolution
+- **Resolved**: 2026-08-25T17:09:00+08:00
+- **Notes**: Continued the browser check with a unique variable name.
+
+---
+
+## [ERR-20260825-086] browser_domcontentloaded_helper_unavailable
+
+**Logged**: 2026-08-25T17:05:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The browser QA script called a page-load helper that is not available in the current in-app browser API.
+
+### Error
+```
+localTab.playwright.domcontentloaded is not a function
+```
+
+### Context
+- The application page was reloaded, but the unsupported wait call stopped the QA script before inspection.
+- No application data or source code was changed by the failed call.
+
+### Suggested Fix
+Use a short bounded wait after reload and confirm readiness from the visible DOM snapshot.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/index.html, frontend/public/assets/app.js
+
+### Resolution
+- **Resolved**: 2026-08-25T17:06:00+08:00
+- **Notes**: Replaced the unsupported helper with a bounded wait and DOM-based readiness check.
+
+---
+
+## [ERR-20260825-085] browser_realtime_nav_accessible_name
+
+**Logged**: 2026-08-25T16:44:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The initial browser QA locator could not find the realtime-information navigation button by the assumed exact accessible name.
+
+### Error
+```
+Playwright selector deadline exceeded: role=button, name="实时信息检索"
+```
+
+### Context
+- The page loaded successfully at localhost and displayed the signed-in application shell.
+- No page state was changed by the failed click.
+
+### Suggested Fix
+Inspect the fresh visible DOM for the rendered navigation label, then use the observed locator instead of an assumed accessible name.
+
+### Metadata
+- Reproducible: unknown
+- Related Files: frontend/public/index.html, frontend/public/assets/app.js
+
+### Resolution
+- **Resolved**: 2026-08-25T16:46:00+08:00
+- **Notes**: Used the observed accessible name `实时信息检索 X + WEB`, opened the target page, and confirmed runtime `2026.08.25.21` with the new asset versions.
+
+---
+
+## [ERR-20260825-084] py_compile_read_only_workspace
+
+**Logged**: 2026-08-25T16:32:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Python bytecode compilation attempted to create a `__pycache__` file in the read-only workspace.
+
+### Error
+```
+Operation not permitted: backend/app/services/__pycache__/institutional_intelligence_service...
+```
+
+### Context
+- No source file was modified by the failed check.
+- JavaScript syntax checking did not run because the preceding command failed.
+
+### Suggested Fix
+Use in-memory `ast.parse` for Python syntax validation and run JavaScript syntax checking separately.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/services/institutional_intelligence_service.py
+
+### Resolution
+- **Resolved**: 2026-08-25T16:33:00+08:00
+- **Notes**: Replaced bytecode compilation with read-only AST parsing.
+
+---
+
+## [ERR-20260825-083] duplicate_provider_translation_rejected
+
+**Logged**: 2026-08-25T16:20:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+A proposed fallback would have resent a complete institutional analysis result to OCI Grok for translation, creating an unnecessary second outbound transfer.
+
+### Error
+```
+apply_patch rejected: duplicate provider translation carries unacceptable data-egress risk
+```
+
+### Context
+- The user requested Chinese presentation, but did not separately authorize retransmitting the full result for translation.
+- The rejected patch was not applied.
+
+### Suggested Fix
+Enforce Simplified Chinese in the original inference request, localize fixed labels and enums locally, and reject residual English prose before it reaches the UI.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/services/institutional_intelligence_service.py
+
+### Resolution
+- **Resolved**: 2026-08-25T16:21:00+08:00
+- **Notes**: Switched to single-pass Chinese generation plus local validation; no duplicate provider call or additional data egress is used.
+
+---
+
+## [ERR-20260825-068] compressed_html_title_patch_mismatch
+
+**Logged**: 2026-08-25T10:03:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+A bulk title patch failed because several complete page sections are compressed onto single very long HTML lines.
+
+### Error
+```
+apply_patch verification failed while matching the portfolio page heading line
+```
+
+### Context
+- The intended copy changes were not applied by the failed patch.
+
+### Suggested Fix
+Use a single declarative page-copy map in the frontend initialization so all page headings are updated consistently without rewriting compressed section markup.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/index.html, frontend/public/assets/app.js
+
+### Resolution
+- **Resolved**: 2026-08-25T10:04:00+08:00
+- **Notes**: Moved concise heading and subtitle copy into one initialization map and kept only structural user-menu edits in HTML.
+
+---
+
+## [ERR-20260825-067] python_secrets_entropy_hang
+
+**Logged**: 2026-08-25T09:53:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+The isolated Python process unexpectedly hung while generating a session signing secret with `secrets.token_urlsafe`.
+
+### Error
+```
+Process produced no output for more than 30 seconds and required termination.
+```
+
+### Context
+- The command only requested cryptographically secure random bytes and did not touch project files.
+
+### Suggested Fix
+Use the system OpenSSL random generator for the local `.env` session secret.
+
+### Metadata
+- Reproducible: unknown
+- Related Files: backend/.env
+
+### Resolution
+- **Resolved**: 2026-08-25T09:54:00+08:00
+- **Notes**: Replaced the hanging generator with `openssl rand` and continued without reusing an application password as a signing secret.
+
+---
+
+## [ERR-20260825-066] sandbox_localhost_connect_denied
+
+**Logged**: 2026-08-25T09:35:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+The default sandbox could not connect to the local UI service for read-only endpoint verification.
+
+### Error
+```
+curl: (7) Failed to connect to localhost port 8000
+```
+
+### Context
+- The in-app browser remained connected and displayed the running application; the failure was isolated to the restricted shell network context.
+
+### Suggested Fix
+Repeat the scoped localhost read-only checks with approved network permissions.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/main_ui.py
+
+### Resolution
+- **Resolved**: 2026-08-25T09:36:00+08:00
+- **Notes**: Re-ran the same localhost health, readiness, report-list, and monitor-list checks with scoped approval.
+
+---
+
+## [ERR-20260825-065] brand_patch_context_mismatch
+
+**Logged**: 2026-08-25T09:33:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The first brand consistency patch targeted a helper name that does not exist in the current frontend.
+
+### Error
+```
+apply_patch verification failed: Failed to find expected lines ... function sanitizeBrand(candidate)
+```
+
+### Context
+- The existing brand normalization is implemented inside `applyBrandConfig`.
+
+### Suggested Fix
+Inspect the current brand configuration function and patch its actual context.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/assets/app.js, frontend/public/index.html
+
+### Resolution
+- **Resolved**: 2026-08-25T09:34:00+08:00
+- **Notes**: Retargeted the update to `applyBrandConfig` and the current static defaults.
+
+---
+
+## [ERR-20260825-064] browser_tab_wait_method_unavailable
+
+**Logged**: 2026-08-25T09:32:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The current in-app browser tab wrapper does not expose a direct `waitForTimeout` method.
+
+### Error
+```
+platformTab.waitForTimeout is not a function
+```
+
+### Context
+- Navigation completed before the unsupported convenience wait was called.
+
+### Suggested Fix
+Use the supported page snapshot or accessibility inspection operation, which waits for the document state needed by the validation.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/index.html
+
+### Resolution
+- **Resolved**: 2026-08-25T09:33:00+08:00
+- **Notes**: Continued with supported Playwright-backed page inspection instead of a tab-level timeout helper.
+
+---
+
+## [ERR-20260825-063] stale_browser_tab_after_restart
+
+**Logged**: 2026-08-25T09:30:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The persisted in-app browser tab binding became stale after the local UI service restart.
+
+### Error
+```
+Unknown tab: 7
+```
+
+### Context
+- The browser connection remained available; only the old tab handle was no longer part of the current browser session.
+
+### Suggested Fix
+Discard the stale tab binding and obtain a fresh tab from the existing browser binding.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/index.html
+- See Also: ERR-20260825-060
+
+### Resolution
+- **Resolved**: 2026-08-25T09:31:00+08:00
+- **Notes**: Recovered by listing current tabs and rebinding a current or newly created in-app tab.
+
+---
+
+## [ERR-20260825-062] py_compile_read_only_cache
+
+**Logged**: 2026-08-25T09:23:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Python bytecode compilation attempted to write a cache file in the managed read-only workspace.
+
+### Error
+```
+[Errno 1] Operation not permitted: backend/app/models/__pycache__/intelligence_monitoring...
+```
+
+### Context
+- The validation command used `py_compile`, which writes `.pyc` artifacts even though only syntax validation was needed.
+
+### Suggested Fix
+Parse the source with `ast.parse` for read-only syntax validation and reserve bytecode compilation for an approved writable run.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/models/intelligence_monitoring.py, backend/app/services/intelligence_monitoring_service.py
+
+### Resolution
+- **Resolved**: 2026-08-25T09:24:00+08:00
+- **Notes**: Switched subsequent static checks to read-only AST parsing.
+
+---
+
+## [ERR-20260825-061] process_list_sandbox_denied
+
+**Logged**: 2026-08-25T09:15:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+The default read-only environment denied process-list inspection before the local UI restart.
+
+### Error
+```
+zsh: operation not permitted: ps
+```
+
+### Context
+- The startup script was inspected successfully and already validates listener ownership, working directory, reload parent, and graceful termination.
+
+### Suggested Fix
+Run the scoped project startup script with approved process permissions instead of probing the process list separately.
+
+### Metadata
+- Reproducible: yes
+- Related Files: start-ui.sh
+- See Also: ERR-20260824-049
+
+### Resolution
+- **Resolved**: 2026-08-25T09:16:00+08:00
+- **Notes**: Continued through the verified project-scoped restart guard.
+
+---
+
+## [ERR-20260825-060] browser_tabs_open_method
+
+**Logged**: 2026-08-25T09:10:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The reused browser binding did not expose `browser.tabs.open` after its prior tabs had been cleaned up.
+
+### Error
+```
+browser.tabs.open is not a function
+```
+
+### Context
+- Browser binding was reused as required.
+- `browser.tabs.list()` returned an empty collection.
+- Attempted to open the local UI with an assumed tabs method.
+
+### Suggested Fix
+Inspect the already-connected binding's public tab methods and use the documented creation method.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/index.html
+- See Also: ERR-20260824-032, ERR-20260824-033
+
+### Resolution
+- **Resolved**: 2026-08-25T09:12:00+08:00
+- **Notes**: The binding exposes `tabs.new(...)`; using it created the target local-app tab successfully.
+
+---
+
+## [ERR-20260825-059] pdf_text_case_assertion
+
+**Logged**: 2026-08-25T09:03:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The PDF regression test expected title-case branding while the rendered header intentionally uses uppercase branding.
+
+### Error
+```
+AssertionError: 'Grok Demo' not found in 'GROK DEMO / 实时决策情报分析 ...'
+```
+
+### Context
+- PDF generation, page count, Chinese text extraction, tables, sources, and audit sections all succeeded.
+- Only the case-sensitive string assertion failed.
+
+### Suggested Fix
+Assert the exact rendered brand string or normalize case before comparison.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/tests/run_operational_hardening.py
+
+### Resolution
+- **Resolved**: 2026-08-25T09:04:00+08:00
+- **Notes**: Updated the assertion to the intentional `GROK DEMO` page-header text.
+
+---
+
+## [ERR-20260825-058] standalone_test_import_path
+
+**Logged**: 2026-08-25T00:20:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The dependency-free test runner still required an external Python module path when invoked as a file.
+
+### Error
+```
+ModuleNotFoundError: No module named 'app'
+```
+
+### Context
+- Executing `tests/run_operational_hardening.py` makes `tests/` the first import root.
+- The runner imports the sibling `app/` package.
+
+### Suggested Fix
+Insert the resolved backend root into `sys.path` before application imports.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/tests/run_operational_hardening.py
+- See Also: ERR-20260824-047, ERR-20260825-057
+
+### Resolution
+- **Resolved**: 2026-08-25T00:21:00+08:00
+- **Notes**: Made the standalone runner initialize its backend import root directly.
+
+---
+
+## [ERR-20260825-057] backend_import_workdir
+
+**Logged**: 2026-08-25T00:14:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The PDF service import probe ran from the repository root instead of the backend package root.
+
+### Error
+```
+ModuleNotFoundError: No module named 'app'
+```
+
+### Context
+- Backend modules use `app.*` imports and expect `backend/` on the Python import path.
+
+### Suggested Fix
+Run backend import and test commands with `backend/` as their working directory.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/services/intelligence_pdf_service.py
+- See Also: ERR-20260824-029
+
+### Resolution
+- **Resolved**: 2026-08-25T00:15:00+08:00
+- **Notes**: Re-ran the import probe from the backend directory.
+
+---
+
+## [ERR-20260825-056] compileall_read_only_bytecode
+
+**Logged**: 2026-08-25T00:12:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+Python `compileall` attempted to update bytecode caches in a read-only workspace.
+
+### Error
+```
+PermissionError: [Errno 1] Operation not permitted: '__pycache__/...pyc'
+```
+
+### Context
+- Ran a broad backend syntax check after adding the PDF export service.
+- Source files are readable, but the command writes `.pyc` files by default.
+
+### Suggested Fix
+Parse source files with `ast.parse` or run imports with `PYTHONDONTWRITEBYTECODE=1`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/api/intelligence.py, backend/app/services/intelligence_pdf_service.py
+- See Also: ERR-20260824-014
+
+### Resolution
+- **Resolved**: 2026-08-25T00:13:00+08:00
+- **Notes**: Replaced compileall with read-only AST parsing and disabled bytecode writes for runtime imports.
+
+---
+
 ## [ERR-20260825-055] apply_patch_permission_review_timeout
 
 **Logged**: 2026-08-25T00:05:00+08:00
@@ -2134,5 +2740,358 @@ Use `python -c` for short dependency probes and treat Git status as unavailable 
 ### Resolution
 - **Resolved**: 2026-08-24T16:12:00+08:00
 - **Notes**: Switched subsequent checks to single-line Python commands and filesystem-aware validation.
+
+---
+## [ERR-20260825-069] apply_patch_mixed_assumption
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: implementation
+
+### Summary
+A grouped patch assumed a duplicate event binding and a deployment-script command that were not present in the current files.
+
+### Error
+```
+apply_patch verification failed: Failed to find expected lines in frontend/public/assets/app.js
+```
+
+### Context
+- The earlier inspection output overlapped two ranges and made one event binding appear duplicated.
+- The deployment script did not contain the assumed Gunicorn line.
+
+### Suggested Fix
+Confirm exact matches with a focused search, then apply only verified hunks.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Rechecked the exact files and split the verified changes into a smaller patch.
+
+---
+## [ERR-20260825-070] duplicate_env_example_keys
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: configuration
+
+### Summary
+The authentication example patch added three keys that were already present immediately below the matched context.
+
+### Error
+```
+AUTH_COOKIE_SECURE, AUTH_MAX_ATTEMPTS, and AUTH_LOCKOUT_MINUTES appeared twice.
+```
+
+### Suggested Fix
+Inspect the whole configuration block before appending adjacent settings, then remove duplicate keys immediately.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Removed the duplicate example entries and retained one canonical authentication block.
+
+---
+## [ERR-20260825-071] relative_sqlite_path_after_absolute_env_loading
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: tests
+
+### Summary
+Loading `backend/.env` reliably exposed that its relative SQLite URL was still resolved against the caller's working directory.
+
+### Error
+```
+sqlite3.OperationalError: unable to open database file
+```
+
+### Context
+- Tests were launched from the repository root.
+- `DATABASE_URL=sqlite:///./data/quant_advisor.db` therefore pointed at a non-existent root-level data directory instead of `backend/data`.
+
+### Suggested Fix
+Normalize relative SQLite URLs against the backend directory during settings validation so launch directory does not alter storage location.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Added deterministic relative SQLite URL normalization and scheduled the regression runner for another full pass.
+
+---
+## [ERR-20260825-072] live_server_not_running_before_browser_qa
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: runtime
+
+### Summary
+The previously running local UI process was no longer listening when final browser verification began.
+
+### Error
+```
+curl: (7) Failed to connect to 127.0.0.1 port 8000
+```
+
+### Context
+- The earlier long-running development session had ended before this implementation pass completed.
+- The follow-on JSON probe consequently received no response.
+
+### Suggested Fix
+Probe the port before browser QA and start a fresh persistent application process when it is unavailable.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Started a new persistent server process before continuing functional and responsive browser checks.
+
+---
+## [ERR-20260825-073] sandbox_localhost_probe_denied
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: runtime
+
+### Summary
+A sandboxed localhost probe reported connection failure even though the persistent server process was healthy.
+
+### Error
+```
+curl: (7) Failed to connect to 127.0.0.1 port 8000
+```
+
+### Context
+- The server session continued producing scheduler output.
+- The same probe succeeded immediately with approved local network access.
+
+### Suggested Fix
+Use escalated localhost access for runtime verification in the restricted desktop sandbox after confirming the server session is alive.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: The approved probe confirmed HTTP 303 login redirection, healthy runtime 2026.08.25.19 and operational authentication readiness.
+
+---
+## [ERR-20260825-074] stale_in_app_browser_tab_binding
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: browser-qa
+
+### Summary
+The persisted in-app browser variable referred to a tab that had been closed since the earlier verification pass.
+
+### Error
+```
+Unknown tab: 8
+```
+
+### Suggested Fix
+List current browser tabs and rebind the page object before navigation when a persisted binding is stale.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Rebound browser verification to the current tab and continued without creating unnecessary windows.
+
+---
+## [ERR-20260825-075] password_label_browser_locator_ambiguous
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: browser-qa
+
+### Summary
+The login password field and its show-password button both matched the broad accessible-label locator.
+
+### Error
+```
+strict mode violation: getByLabel('密码') resolved to 2 elements
+```
+
+### Suggested Fix
+Use the exact textbox role/name exposed by the browser accessibility snapshot for the password input.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Switched to the unique textbox locator and continued the same login flow.
+
+---
+## [ERR-20260825-076] transient_user_menu_closed_between_browser_steps
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: browser-qa
+
+### Summary
+The logout control is a semantic `menuitem`, so a locator restricted to the `button` role could not match it.
+
+### Error
+```
+Playwright selector deadline exceeded: no visible button named 退出登录
+```
+
+### Suggested Fix
+Use the `menuitem` role exposed by the accessibility snapshot, then verify the redirected login page.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Confirmed the popover was visible and switched to the correct `menuitem` locator.
+
+---
+## [ERR-20260825-077] pytest_not_installed_in_ui_virtualenv
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The optional Pytest runner is not installed in the lightweight UI virtual environment.
+
+### Error
+```
+No module named pytest
+```
+
+### Context
+- The repository includes a dependency-free `unittest` regression runner specifically for the UI environment.
+- That runner already completed all eight login, security, PDF, monitoring, model and status checks successfully.
+
+### Suggested Fix
+Keep the dependency-free runner as the local acceptance gate, or add Pytest to a dedicated development requirements file when a Pytest-only workflow is required.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: No runtime dependency was added; verification relies on the successful 8/8 operational hardening suite plus browser and OpenSpec checks.
+
+---
+## [ERR-20260825-078] docker_context_would_include_local_env
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: security
+
+### Summary
+The repository had no Docker ignore file, so a root-context image build could copy `backend/.env` into an image layer.
+
+### Context
+- The Dockerfile copies the entire backend directory.
+- Git ignore does not protect Docker build context or image layers.
+
+### Suggested Fix
+Exclude local environment files, virtual environments, databases, reports and caches from the Docker context, and inject `.env` only at container runtime.
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Added a root `.dockerignore` and declared `backend/.env` as a runtime Compose environment file; explicit Compose database and cache values retain precedence.
+
+---
+## [ERR-20260825-081] combined_history_event_workspace_patch_context
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+A combined `apply_patch` for history click handlers and workspace switching did not match the current `selectWorkspace` context.
+
+### Error
+```
+apply_patch verification failed: Failed to find expected lines ... function selectWorkspace(id)
+```
+
+### Context
+- The patch attempted two unrelated insertions in one operation.
+- No hunk was applied and no file content was damaged.
+
+### Resolution
+- **Resolved**: 2026-08-25T13:03:00+08:00
+- **Notes**: Located the current line ranges and applied the event-handler and workspace-switch changes as separate successful patches.
+
+---
+
+## [ERR-20260825-082] combined_chinese_prompt_patch_context
+
+**Logged**: 2026-08-25T13:25:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: backend
+
+### Summary
+A combined replacement of three long Grok prompt templates did not match the current geopolitical JSON example.
+
+### Error
+```
+apply_patch verification failed while matching the geopolitical prompt block
+```
+
+### Context
+- The failed operation bundled realtime, project-risk, and geopolitical prompt rewrites.
+- No hunk was applied and the earlier system-prompt changes remain intact.
+
+### Suggested Fix
+Read the exact current prompt line ranges and replace each workflow prompt in a separate patch.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/services/institutional_intelligence_service.py
+
+### Resolution
+- **Resolved**: 2026-08-25T16:52:00+08:00
+- **Notes**: Re-read the exact prompt ranges and applied the three Chinese workflow templates successfully in a scoped patch.
+
+---
+## [ERR-20260825-079] browser_history_restore_selector_timeout
+
+**Logged**: 2026-08-25T13:08:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The first browser assertion after clicking a history record timed out while reading `#realtime-query`.
+
+### Error
+```
+Timed out after 3000ms evaluating selector #realtime-query: Playwright selector deadline exceeded
+```
+
+### Context
+- The history list and test record were visible before the click.
+- The click may have triggered page movement while the immediate multi-assertion call was running.
+
+### Resolution
+- **Resolved**: 2026-08-25T13:09:00+08:00
+- **Notes**: A fresh DOM snapshot showed that the click had succeeded: the saved query, keywords, source selection, summary, source ledger, audit ribbon, and enabled PDF button were all restored. The timeout was limited to the immediate selector assertion during smooth page movement; no product fix was required.
+
+---
+## [ERR-20260825-080] browser_history_pdf_download_event_timeout
+
+**Logged**: 2026-08-25T13:09:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+Browser QA timed out waiting for a native download event after clicking `导出当时记录`.
+
+### Error
+```
+Timed out after 20000ms waiting for download.
+```
+
+### Context
+- Historical result restoration was already visibly successful.
+- The frontend fetches the PDF as a Blob and triggers an object-URL anchor, which may not surface through the browser automation download event.
+
+### Resolution
+- **Resolved**: 2026-08-25T13:10:00+08:00
+- **Notes**: The application made the expected history PDF request, received HTTP 200 with a 112,288-byte PDF, and wrote the `export_history_pdf` audit event. The browser automation layer did not expose the programmatic Blob/object-URL download as a native download event; the endpoint and UI action were both functional.
 
 ---

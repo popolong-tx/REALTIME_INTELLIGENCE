@@ -16,7 +16,12 @@ from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.models.intelligence_monitoring import IntelligenceMonitor, IntelligenceMonitorRun
+from app.services.audit_trail_service import AuditEventType, audit_trail_service
 from app.services.institutional_intelligence_service import institutional_intelligence_service
+from app.services.intelligence_report_artifact_service import (
+    intelligence_report_artifact_service,
+)
+from app.services.intelligence_history_service import intelligence_history_service
 
 
 logger = logging.getLogger(__name__)
@@ -58,7 +63,16 @@ class IntelligenceMonitoringService:
             return "每 30 分钟"
         return f"每 {minutes // 60} 小时"
 
-    def serialize_monitor(self, monitor: IntelligenceMonitor) -> Dict[str, Any]:
+    def serialize_monitor(
+        self,
+        monitor: IntelligenceMonitor,
+        db: Optional[Session] = None,
+    ) -> Dict[str, Any]:
+        latest_report = (
+            intelligence_report_artifact_service.latest_for_monitor(db, monitor.id)
+            if db is not None
+            else None
+        )
         return {
             "id": monitor.id,
             "workspace_id": monitor.workspace_id,
@@ -75,9 +89,23 @@ class IntelligenceMonitoringService:
             "next_run_at": self._iso(monitor.next_run_at),
             "created_at": self._iso(monitor.created_at),
             "updated_at": self._iso(monitor.updated_at),
+            "latest_report": (
+                intelligence_report_artifact_service.serialize(latest_report)
+                if latest_report
+                else None
+            ),
         }
 
-    def serialize_run(self, run: IntelligenceMonitorRun) -> Dict[str, Any]:
+    def serialize_run(
+        self,
+        run: IntelligenceMonitorRun,
+        db: Optional[Session] = None,
+    ) -> Dict[str, Any]:
+        report = (
+            intelligence_report_artifact_service.for_run(db, run.id)
+            if db is not None
+            else None
+        )
         return {
             "id": run.id,
             "monitor_id": run.monitor_id,
@@ -87,6 +115,7 @@ class IntelligenceMonitoringService:
             "error_message": run.error_message,
             "started_at": self._iso(run.started_at),
             "completed_at": self._iso(run.completed_at),
+            "report": intelligence_report_artifact_service.serialize(report) if report else None,
         }
 
     def list_monitors(
@@ -164,8 +193,10 @@ class IntelligenceMonitoringService:
 
     def delete_monitor(self, db: Session, monitor_id: str) -> None:
         monitor = self.get_monitor(db, monitor_id)
+        report_paths = intelligence_report_artifact_service.monitor_storage_paths(db, monitor_id)
         db.delete(monitor)
         db.commit()
+        intelligence_report_artifact_service.delete_storage_paths(report_paths)
 
     def list_runs(
         self,
@@ -247,9 +278,116 @@ class IntelligenceMonitoringService:
                 db.refresh(monitor)
                 if run:
                     db.refresh(run)
+                history_record = None
+                history_error = None
+                if run and result_status in {"live", "partial"}:
+                    try:
+                        workflow = (
+                            "realtime-research"
+                            if monitor.monitor_type == "realtime_research"
+                            else "project-risk"
+                        )
+                        history_record = intelligence_history_service.save(
+                            db,
+                            workflow=workflow,
+                            query_context=request_payload,
+                            result=result,
+                            trigger=trigger,
+                            monitor_id=monitor.id,
+                            run_id=run.id,
+                        )
+                    except Exception as exc:
+                        history_error = str(exc)
+                        logger.exception(
+                            "Analysis history save failed for intelligence run %s",
+                            run.id,
+                        )
+                    if history_record:
+                        try:
+                            await audit_trail_service.log_event(
+                                event_type=AuditEventType.DATA_ACCESS,
+                                user_id=monitor.workspace_id,
+                                resource_type="intelligence_analysis_history",
+                                resource_id=history_record.id,
+                                action="save_analysis_history",
+                                details={
+                                    "monitor_id": monitor.id,
+                                    "run_id": run.id,
+                                    "trigger": trigger,
+                                    "workflow": history_record.workflow,
+                                    "source_request_id": history_record.source_request_id,
+                                },
+                            )
+                        except Exception:
+                            logger.exception(
+                                "Analysis history audit failed for intelligence run %s",
+                                run.id,
+                            )
+                report = None
+                report_error = None
+                if run and result_status in {"live", "partial"}:
+                    try:
+                        report = intelligence_report_artifact_service.create_for_run(
+                            db,
+                            monitor=monitor,
+                            run=run,
+                            result=result,
+                            query_context=request_payload,
+                        )
+                    except Exception as exc:
+                        report_error = str(exc)
+                        logger.exception(
+                            "Automatic PDF generation failed for intelligence run %s",
+                            run.id,
+                        )
+                    if report:
+                        try:
+                            await audit_trail_service.log_event(
+                                event_type=AuditEventType.DATA_ACCESS,
+                                user_id=monitor.workspace_id,
+                                resource_type="intelligence_report",
+                                resource_id=report.id,
+                                action="generate_monitor_pdf",
+                                details={
+                                    "monitor_id": monitor.id,
+                                    "run_id": run.id,
+                                    "trigger": trigger,
+                                    "workflow": report.workflow,
+                                    "source_request_id": report.source_request_id,
+                                    "content_bytes": report.byte_size,
+                                    "sha256": report.sha256,
+                                    "template_version": "1.0",
+                                },
+                            )
+                        except Exception:
+                            logger.exception(
+                                "Automatic PDF audit failed for intelligence run %s",
+                                run.id,
+                            )
                 return {
-                    "monitor": self.serialize_monitor(monitor),
-                    "run": self.serialize_run(run) if run else None,
+                    "monitor": self.serialize_monitor(monitor, db),
+                    "run": self.serialize_run(run, db) if run else None,
+                    "report_generation": {
+                        "status": "generated"
+                        if report
+                        else "failed"
+                        if report_error
+                        else "skipped",
+                        "error": report_error,
+                    },
+                    "history_record": (
+                        intelligence_history_service.serialize_summary(history_record)
+                        if history_record
+                        else None
+                    ),
+                    "history_save": {
+                        "status": "saved"
+                        if history_record
+                        else "failed"
+                        if history_error
+                        else "skipped",
+                        "error": history_error,
+                    },
                 }
         except Exception as exc:
             completed_at = self._utcnow()

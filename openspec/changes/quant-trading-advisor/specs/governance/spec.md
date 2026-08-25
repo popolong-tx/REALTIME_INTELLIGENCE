@@ -45,6 +45,32 @@ The system SHALL implement role-based access control for different user types.
 - **WHEN** access control decisions are made
 - **THEN** system logs the permission check results
 
+### Requirement: Environment-configured test login
+The local demonstration SHALL protect the product shell and business APIs with credentials configured only through server-side environment variables.
+
+#### Scenario: Unauthenticated product access
+- **WHEN** a browser without a valid session requests the product shell
+- **THEN** the server redirects it to the login page
+- **AND** an unauthenticated business API request returns HTTP 401 without executing the operation
+
+#### Scenario: Successful test-account login
+- **WHEN** the submitted username and password match the configured environment values
+- **THEN** the server creates a signed, expiring, HttpOnly and SameSite browser session
+- **AND** records the login without returning, logging or embedding the password in client assets
+
+#### Scenario: Repeated failed login
+- **WHEN** one client repeatedly submits invalid credentials beyond the configured threshold
+- **THEN** the server temporarily rate-limits additional attempts
+- **AND** records a security audit event without recording the password
+
+#### Scenario: Logout
+- **WHEN** an authenticated user chooses to log out
+- **THEN** the server clears the session cookie and subsequent protected requests require login again
+
+#### Scenario: Production identity boundary
+- **WHEN** the platform is prepared for institutional or multi-tenant production use
+- **THEN** the single local account is replaced by enterprise identity, role authorization, tenant scope, revocation and secure secret management
+
 ### Requirement: Compliance gates
 The system SHALL enforce compliance checks before generating actionable recommendations.
 

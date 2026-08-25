@@ -34,6 +34,75 @@ GEOPOLITICAL_IMPACT_DIMENSIONS = [
     {"id": "risk_transfer", "label": "风险转移"},
 ]
 
+SIMPLIFIED_CHINESE_OUTPUT_RULE = """
+输出语言强制规则：
+1. 除 JSON 键、规定的英文枚举代码、URL、日期、股票代码、模型/工具标识和引用编号外，所有面向用户的文字必须使用简体中文。
+2. 人名、机构名、产品名和官方术语可保留原文，并在必要时给出中文名称；不得为了翻译而改变事实含义。
+3. X 的 original_text 必须保持来源原文，不能翻译或改写；如原文不是中文，在 content_excerpt 中提供忠实的简体中文说明。
+4. 不得输出英文版摘要后再附中文；结构化分析、判断、趋势、理由、事件、情景、建议、假设、未知项和来源说明直接使用简体中文。
+""".strip()
+
+TRANSLATABLE_PROSE_KEYS = {
+    "executive_summary",
+    "direct_assessment",
+    "coverage_note",
+    "label",
+    "evidence",
+    "rationale",
+    "title",
+    "content_excerpt",
+    "impact",
+    "trigger",
+    "owner",
+    "urgency",
+    "driver",
+    "mechanism",
+    "financing_effect",
+    "name",
+    "probability",
+    "pipeline_impact",
+    "cofinancing_impact",
+    "borrowing_appetite",
+    "feasibility",
+    "risk_transfer",
+    "upside",
+    "downside",
+    "timing",
+    "position",
+    "action",
+    "excerpt",
+}
+
+TRANSLATABLE_PROSE_LIST_KEYS = {
+    "watch_items",
+    "assumptions",
+    "unknowns",
+    "early_signals",
+    "affected_parties",
+    "warnings",
+}
+
+LOCALIZED_ENUM_VALUES = {
+    "low": "低",
+    "moderate": "中等",
+    "high": "高",
+    "critical": "严重",
+    "unrated": "未评级",
+    "rising": "上升",
+    "stable": "稳定",
+    "falling": "下降",
+    "unknown": "未知",
+    "unclear": "不明确",
+    "now": "立即",
+    "7_days": "7 天内",
+    "30_days": "30 天内",
+    "monitor": "持续监控",
+    "quarter": "本季度",
+    "baseline": "基准情景",
+    "stress": "压力情景",
+    "opportunity": "机会情景",
+}
+
 
 class InstitutionalIntelligenceService:
     """Orchestrate cited Grok analysis for project and sovereign decisions."""
@@ -92,10 +161,10 @@ class InstitutionalIntelligenceService:
         raw = await oci_responses_service.generate_realtime_research(
             prompt=self._realtime_research_prompt(request, from_date, to_date),
             system_prompt=(
-                "You are a real-time open-source intelligence researcher. Preserve cited X post "
-                "text when requested, keep public-web evidence separate, and never claim exhaustive "
-                "coverage. Distinguish source text, facts, opinions, reported claims, and inference. "
-                "Do not invent authors, timestamps, URLs, quotations, or source content."
+                "你是一名实时公开信息研究员。按要求保留有引用的 X 原文，将公共网页证据分开呈现，"
+                "不得宣称覆盖全部信息。严格区分来源原文、事实、观点、媒体转述和模型推断；"
+                "不得编造作者、时间、URL、引语或来源内容。\n\n"
+                + SIMPLIFIED_CHINESE_OUTPUT_RULE
             ),
             source_channels=source_channels,
             from_date=from_date,
@@ -105,7 +174,8 @@ class InstitutionalIntelligenceService:
             max_tokens=6500,
             temperature=0.1,
         )
-        return self._normalize_realtime_research(raw, request, from_date, to_date)
+        result = self._normalize_realtime_research(raw, request, from_date, to_date)
+        return await self._ensure_simplified_chinese(result)
 
     async def analyze_project_risk(self, request: Dict[str, Any]) -> Dict[str, Any]:
         if not self.configured:
@@ -122,10 +192,10 @@ class InstitutionalIntelligenceService:
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
-                "You are an institutional project-risk analyst. Be direct and evidence-led. "
-                "Do not soften material default, political, social-conflict, environmental, "
-                "or reputation risks. Distinguish facts, reported claims, opinions, and inference. "
-                "Never invent a source or imply that a financing decision has been approved."
+                "你是一名机构项目风险分析师，必须直接、以证据为中心。不得淡化重大违约、政治、"
+                "社会冲突、环境或声誉风险。严格区分事实、媒体转述、观点和模型推断；"
+                "不得编造来源，也不得暗示任何融资决策已经获批。\n\n"
+                + SIMPLIFIED_CHINESE_OUTPUT_RULE
             ),
             temperature=0.15,
             max_tokens=5000,
@@ -134,12 +204,13 @@ class InstitutionalIntelligenceService:
             use_code_interpreter=True,
             model_id=settings.OCI_GROK_MODEL_ID,
         )
-        return self._normalize_live_result(
+        result = self._normalize_live_result(
             workflow="project-risk",
             raw=raw,
             request=request,
             framework=PROJECT_RISK_DIMENSIONS,
         )
+        return await self._ensure_simplified_chinese(result)
 
     async def analyze_geopolitical_impact(self, request: Dict[str, Any]) -> Dict[str, Any]:
         if not self.configured:
@@ -156,10 +227,10 @@ class InstitutionalIntelligenceService:
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
-                "You are a senior multilateral-development-bank strategy team. Use explicit "
-                "causal chains and competing hypotheses. Present trade-offs and likely second-order "
-                "effects directly. Separate sourced observations from inference, state assumptions, "
-                "and never manufacture certainty, consensus, or citations."
+                "你是多边开发银行高级战略分析团队。使用明确的因果链和竞争性假设，直接呈现权衡"
+                "以及可能的二阶影响。将有来源的观察与模型推断分开，明确写出假设；"
+                "不得编造确定性、共识或引用。\n\n"
+                + SIMPLIFIED_CHINESE_OUTPUT_RULE
             ),
             temperature=0.2,
             max_tokens=6500,
@@ -168,45 +239,48 @@ class InstitutionalIntelligenceService:
             use_code_interpreter=True,
             model_id=settings.OCI_GROK_MULTI_AGENT_MODEL_ID,
         )
-        return self._normalize_live_result(
+        result = self._normalize_live_result(
             workflow="geopolitical-impact",
             raw=raw,
             request=request,
             framework=GEOPOLITICAL_IMPACT_DIMENSIONS,
         )
+        return await self._ensure_simplified_chinese(result)
 
     @staticmethod
     def _project_risk_prompt(request: Dict[str, Any]) -> str:
         focuses = ", ".join(request.get("risk_focus") or [item["label"] for item in PROJECT_RISK_DIMENSIONS])
         return f"""
-Analyze current project-level risk using X Search, public Web Search, and cited evidence.
+使用 X Search、公共 Web Search 和可引用证据分析当前项目级风险。
 
-Country/member: {request.get('country')}
-Project: {request.get('project_name')}
-Financial product: {request.get('product_type')}
-Monitoring window: last {request.get('window_days', 7)} days
-Priority dimensions: {focuses}
-Decision question: {request.get('monitoring_question') or 'What changed, why does it matter, and what should the investment and risk teams review now?'}
+国家/成员：{request.get('country')}
+项目：{request.get('project_name')}
+金融产品：{request.get('product_type')}
+监测窗口：最近 {request.get('window_days', 7)} 天
+重点维度：{focuses}
+决策问题：{request.get('monitoring_question') or '发生了什么变化、为什么重要，以及投资与风险团队现在应复核什么？'}
 
-Return JSON only with this shape:
+仅返回符合下列结构的 JSON：
 {{
-  "executive_summary": "concise cited briefing",
-  "direct_assessment": "plain, unsoftened assessment of the most material risk",
+  "executive_summary": "简明且带引用的中文简报",
+  "direct_assessment": "直接说明最重要风险，不淡化",
   "overall_risk": "low|moderate|high|critical|unrated",
   "risk_dimensions": [
-    {{"dimension": "political|social|debt|environment|reputation", "label": "display label", "score": 0, "level": "low|moderate|high|critical|unrated", "trend": "rising|stable|falling|unknown", "rationale": "reason"}}
+    {{"dimension": "political|social|debt|environment|reputation", "label": "中文显示名称", "score": 0, "level": "low|moderate|high|critical|unrated", "trend": "rising|stable|falling|unknown", "rationale": "中文理由"}}
   ],
   "events": [
-    {{"title": "event", "observed_at": "date or unknown", "evidence_status": "verified_source|reported_claim|opinion|unverified", "impact": "project impact", "source_refs": ["citation URL or source label"]}}
+    {{"title": "中文事件标题", "observed_at": "日期或 unknown", "evidence_status": "verified_source|reported_claim|opinion|unverified", "impact": "对项目的中文影响说明", "source_refs": ["引用 URL 或来源标识"]}}
   ],
   "decision_options": [
-    {{"action": "continue|adjust_terms|pause_for_review|accelerate|escalate", "urgency": "now|7_days|30_days|monitor", "owner": "team", "trigger": "observable trigger", "rationale": "why"}}
+    {{"action": "continue|adjust_terms|pause_for_review|accelerate|escalate", "urgency": "now|7_days|30_days|monitor", "owner": "中文负责人/团队", "trigger": "中文可观察触发条件", "rationale": "中文理由"}}
   ],
-  "watch_items": ["specific next signal"],
-  "assumptions": ["material assumption"]
+  "watch_items": ["下一步需观察的具体中文信号"],
+  "assumptions": ["重大中文假设"]
 }}
 
-Scores are 0-100 and must be evidence-based. Use "unrated" and null-like omission when evidence is insufficient. Do not claim that social-media sentiment proves an event.
+评分范围为 0-100，且必须有证据支持。证据不足时使用 "unrated" 并省略无法判断的数值。不得声称社交媒体情绪能够证明事件真实发生。
+
+{SIMPLIFIED_CHINESE_OUTPUT_RULE}
 """.strip()
 
     @staticmethod
@@ -215,37 +289,39 @@ Scores are 0-100 and must be evidence-based. Use "unrated" and null-like omissio
         actors = ", ".join(request.get("actors") or [])
         products = ", ".join(request.get("product_types") or [])
         return f"""
-Analyze how a geopolitical development may affect multilateral development financing.
+分析地缘政治变化如何影响多边开发融资。
 
-Issue/event: {request.get('issue')}
-Regions/member countries: {regions or 'not constrained'}
-Actors to track: {actors or 'relevant governments, officials, think tanks, media, and financing partners'}
-Financial products: {products or 'sovereign loans, non-sovereign finance, guarantees, and co-financing'}
-Decision horizon: {request.get('horizon')}
-Realtime evidence window: last {request.get('window_days', 30)} days
-Decision question: {request.get('decision_question') or 'How could this change pipeline, co-financing, borrowing appetite, feasibility, and risk transfer?'}
+议题/事件：{request.get('issue')}
+地区/成员国：{regions or '不限定'}
+跟踪对象：{actors or '相关政府、官员、智库、媒体和融资合作伙伴'}
+金融产品：{products or '主权贷款、非主权融资、担保和联合融资'}
+决策周期：{request.get('horizon')}
+实时证据窗口：最近 {request.get('window_days', 30)} 天
+决策问题：{request.get('decision_question') or '这将如何改变项目管道、联合融资、借贷意愿、可行性和风险转移？'}
 
-Use X Search for current public statements and Web Search for official, institutional, think-tank, and media evidence. Keep the channels distinguishable and return JSON only:
+使用 X Search 获取当前公开表态，使用 Web Search 获取官方、机构、智库和媒体证据。必须区分两类渠道，并且仅返回 JSON：
 {{
-  "executive_summary": "direct conclusion",
-  "direct_assessment": "what decision-makers should not ignore",
+  "executive_summary": "直接的中文结论",
+  "direct_assessment": "决策者不应忽略的中文判断",
   "transmission_paths": [
-    {{"driver": "change", "mechanism": "causal link", "financing_effect": "effect", "affected_parties": ["party"], "evidence_status": "sourced|inference|uncertain"}}
+    {{"driver": "中文变化驱动因素", "mechanism": "中文因果链", "financing_effect": "中文融资影响", "affected_parties": ["受影响方"], "evidence_status": "sourced|inference|uncertain"}}
   ],
   "scenarios": [
-    {{"name": "baseline|stress|opportunity", "probability": "qualitative range", "early_signals": ["observable signal"], "pipeline_impact": "impact", "cofinancing_impact": "impact", "borrowing_appetite": "impact", "feasibility": "impact", "risk_transfer": "impact"}}
+    {{"name": "基准情景|压力情景|机会情景", "probability": "中文定性概率区间", "early_signals": ["中文可观察信号"], "pipeline_impact": "中文影响", "cofinancing_impact": "中文影响", "borrowing_appetite": "中文影响", "feasibility": "中文影响", "risk_transfer": "中文影响"}}
   ],
   "decision_options": [
-    {{"action": "option", "timing": "now|30_days|quarter", "upside": "benefit", "downside": "cost/risk", "trigger": "observable condition", "owner": "team"}}
+    {{"action": "中文策略选项", "timing": "立即|30天内|本季度", "upside": "中文收益", "downside": "中文成本或风险", "trigger": "中文可观察条件", "owner": "中文负责人/团队"}}
   ],
   "stakeholder_positions": [
-    {{"stakeholder": "actor", "position": "stated position", "evidence_status": "official|reported|opinion|inferred"}}
+    {{"stakeholder": "相关方名称", "position": "中文立场说明", "evidence_status": "official|reported|opinion|inferred"}}
   ],
-  "assumptions": ["assumption"],
-  "unknowns": ["important unknown"]
+  "assumptions": ["中文假设"],
+  "unknowns": ["中文重要未知项"]
 }}
 
-Avoid vague diplomatic wording. Do not present inference as an official position. Do not assign false numeric probabilities.
+避免模糊的外交措辞。不得把模型推断表述为官方立场，不得编造精确的数字概率。
+
+{SIMPLIFIED_CHINESE_OUTPUT_RULE}
 """.strip()
 
     @staticmethod
@@ -258,42 +334,106 @@ Avoid vague diplomatic wording. Do not present inference as an official position
         channels = ", ".join(request.get("source_channels") or ["x", "web"])
         preserve_original = bool(request.get("preserve_x_original", True))
         return f"""
-Research the topic across the selected real-time source channels.
+通过选定的实时信息渠道研究下列主题。
 
-Topic/question: {request.get('query')}
-Keywords and aliases: {keywords or 'derive only necessary aliases from the topic'}
-Date range: {from_date or 'not constrained'} through {to_date or 'now'}
-Selected channels: {channels}
-Maximum requested items: {request.get('max_results', 30)}
-Preserve cited X original text: {'yes' if preserve_original else 'no'}
+主题/问题：{request.get('query')}
+关键词和别名：{keywords or '仅从主题推导必要别名'}
+日期范围：{from_date or '不限定'} 至 {to_date or '当前时间'}
+选定渠道：{channels}
+最多返回条数：{request.get('max_results', 30)}
+保留带引用的 X 原文：{'是' if preserve_original else '否'}
 
-Important coverage rule: this is a best-effort search result, not a complete export of X or the public web. Never describe it as exhaustive or "all posts". Do not repeat near-duplicate reposts. Keep a cited source URL on every item when the provider supplies one.
+覆盖范围规则：这是尽力检索结果，并非 X 或公共网络的完整导出。不得声称结果是“全量”或“所有帖子”。不要重复近似转发；提供方返回来源 URL 时，每条结果都必须保留引用链接。
 
-Return JSON only with this shape:
+仅返回符合下列结构的 JSON：
 {{
-  "executive_summary": "what changed and why it matters",
-  "coverage_note": "plain statement of query scope and limitations",
+  "executive_summary": "用中文说明发生了什么变化以及为何重要",
+  "coverage_note": "用中文直接说明检索范围与局限",
   "trends": [
-    {{"label": "trend", "direction": "rising|stable|falling|unclear", "evidence": "short basis", "source_refs": ["URL"]}}
+    {{"label": "中文趋势名称", "direction": "rising|stable|falling|unclear", "evidence": "中文简要依据", "source_refs": ["URL"]}}
   ],
   "items": [
     {{
       "source_type": "x|public",
-      "title": "post descriptor or public page headline",
-      "author": "account or publisher, or unknown",
-      "published_at": "ISO date/time or unknown",
-      "original_text": "verbatim X post text when available, otherwise empty",
-      "content_excerpt": "concise public-page excerpt or X context",
-      "url": "source URL or empty if unavailable",
+      "title": "中文帖子说明或公共网页标题",
+      "author": "账号、发布方或 unknown",
+      "published_at": "ISO 日期/时间或 unknown",
+      "original_text": "可获得时逐字保留 X 原文，否则为空",
+      "content_excerpt": "公共网页的中文摘要；如 X 原文非中文，则提供忠实的中文说明",
+      "url": "来源 URL，无法获得时为空",
       "evidence_status": "source_available|reported_claim|opinion|unverified",
-      "matched_keywords": ["keyword"]
+      "matched_keywords": ["匹配关键词"]
     }}
   ],
-  "unknowns": ["important missing or unverified point"]
+  "unknowns": ["中文说明重要缺失或未验证事项"]
 }}
 
-For X, keep original_text faithful to the cited post and do not reconstruct missing text. For public pages, do not place paraphrases in original_text. Use code interpretation only to deduplicate, count, or calculate trends from retrieved evidence; do not manufacture missing observations.
+对于 X 内容，original_text 必须忠实保留引用帖子的原文，不能重建缺失文字；如果原文不是中文，在 content_excerpt 中另写中文说明。公共网页不得把改写内容放入 original_text。代码分析只能用于证据去重、计数或趋势计算，不得制造缺失观察。
+
+{SIMPLIFIED_CHINESE_OUTPUT_RULE}
 """.strip()
+
+    @staticmethod
+    def _looks_english(text: str) -> bool:
+        """Detect English-heavy prose without flagging URLs or short identifiers."""
+        value = str(text or "").strip()
+        if not value or value.startswith(("http://", "https://")):
+            return False
+        latin_words = re.findall(r"\b[A-Za-z][A-Za-z'-]{2,}\b", value)
+        if not latin_words:
+            return False
+        cjk_count = len(re.findall(r"[\u3400-\u9fff]", value))
+        latin_count = sum(len(word) for word in latin_words)
+        return len(latin_words) >= 2 or (latin_count >= 12 and cjk_count == 0) or latin_count > cjk_count * 3
+
+    @classmethod
+    def _audit_user_prose_language(
+        cls,
+        value: Any,
+        workflow: str,
+        parent_key: Optional[str] = None,
+    ) -> int:
+        """Localize known enums and count residual English without altering prose."""
+        detected = 0
+        if isinstance(value, dict):
+            for key, item in list(value.items()):
+                if key == "original_text":
+                    continue
+                if isinstance(item, str):
+                    if item in LOCALIZED_ENUM_VALUES and key in {"urgency", "timing", "name", "probability"}:
+                        value[key] = LOCALIZED_ENUM_VALUES[item]
+                    elif key in TRANSLATABLE_PROSE_KEYS and not (
+                        workflow == "project-risk" and key == "action"
+                    ) and cls._looks_english(item):
+                        detected += 1
+                elif isinstance(item, (dict, list)):
+                    detected += cls._audit_user_prose_language(item, workflow, key)
+            return detected
+
+        if isinstance(value, list):
+            for index, item in enumerate(list(value)):
+                if isinstance(item, str):
+                    if item in LOCALIZED_ENUM_VALUES:
+                        value[index] = LOCALIZED_ENUM_VALUES[item]
+                    elif parent_key in TRANSLATABLE_PROSE_LIST_KEYS and cls._looks_english(item):
+                        detected += 1
+                elif isinstance(item, (dict, list)):
+                    detected += cls._audit_user_prose_language(item, workflow, parent_key)
+        return detected
+
+    async def _ensure_simplified_chinese(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply local language compliance checks before returning user-facing data."""
+        workflow = str(result.get("workflow") or "")
+        detected = 0
+        for section in ("analysis", "evidence", "warnings"):
+            if section in result:
+                detected += self._audit_user_prose_language(result[section], workflow, section)
+
+        audit = result.setdefault("audit", {})
+        audit["language"] = "zh-CN"
+        audit["language_compliant"] = detected == 0
+        audit["english_fields_detected"] = detected
+        return result
 
     def _normalize_live_result(
         self,

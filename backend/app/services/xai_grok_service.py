@@ -24,7 +24,7 @@ class XAIGrokService:
         stream: bool = False,
     ) -> Dict[str, Any]:
         """Return the legacy chat-completion shape using OCI Responses."""
-        cache_key = f"xai_chat:{hash(json.dumps(messages))}:{temperature}:{max_tokens}"
+        cache_key = f"xai_chat:zh-cn-v2:{hash(json.dumps(messages))}:{temperature}:{max_tokens}"
         cached = cache.get(cache_key)
         if cached:
             return cached
@@ -34,8 +34,13 @@ class XAIGrokService:
             for message in messages
             if message.get("role") == "system"
         )
+        language_rule = (
+            "除 URL、股票代码、模型/工具标识和必要专有名词外，所有面向用户的回复必须使用简体中文。"
+        )
+        system_prompt = f"{system_prompt}\n\n{language_rule}" if system_prompt else language_rule
+        role_labels = {"user": "用户", "assistant": "助手"}
         prompt = "\n\n".join(
-            f"{message.get('role', 'user').title()}: {message.get('content', '')}"
+            f"{role_labels.get(message.get('role', 'user'), '用户')}：{message.get('content', '')}"
             for message in messages
             if message.get("role") != "system"
         )
@@ -69,38 +74,38 @@ class XAIGrokService:
         """Analyze stock using Grok."""
         # Format stock data
         stock_info = f"""
-Stock: {symbol}
-Current Price: {stock_data.get('current_price', 'N/A')}
-Price Change: {stock_data.get('price_change', 'N/A')} ({stock_data.get('price_change_percent', 'N/A')}%)
-Market Cap: {stock_data.get('market_cap', 'N/A')}
-P/E Ratio: {stock_data.get('pe_ratio', 'N/A')}
-Sector: {stock_data.get('sector', 'N/A')}
-Industry: {stock_data.get('industry', 'N/A')}
+股票：{symbol}
+当前价格：{stock_data.get('current_price', '暂无')}
+价格变化：{stock_data.get('price_change', '暂无')}（{stock_data.get('price_change_percent', '暂无')}%）
+市值：{stock_data.get('market_cap', '暂无')}
+市盈率：{stock_data.get('pe_ratio', '暂无')}
+板块：{stock_data.get('sector', '暂无')}
+行业：{stock_data.get('industry', '暂无')}
 """
 
         # Format news data
         news_summary = ""
         if news_data:
-            news_summary = "\nRecent News:\n"
+            news_summary = "\n近期新闻：\n"
             for news in news_data[:5]:
                 news_summary += f"- {news.get('title', '')}: {news.get('description', '')[:100]}...\n"
 
         messages = [
             {
                 "role": "system",
-                "content": """You are a professional stock analyst. Provide analysis based on the given data.
-Include:
-1. Technical analysis
-2. Fundamental analysis
-3. News sentiment
-4. Risk assessment
-5. Investment recommendation (buy/hold/sell with confidence level)
+                "content": """你是一名专业股票分析师，必须使用简体中文，并且只能依据给定数据分析。
+内容包括：
+1. 技术分析
+2. 基本面分析
+3. 新闻情绪
+4. 风险评估
+5. 投资建议（买入/持有/卖出及置信度）
 
-Important: This is for informational purposes only and not financial advice."""
+重要提示：内容仅供信息参考，不构成财务或投资建议。"""
             },
             {
                 "role": "user",
-                "content": f"Analyze the following stock:\n{stock_info}{news_summary}"
+                "content": f"请分析下列股票，并使用简体中文回答：\n{stock_info}{news_summary}"
             }
         ]
 
@@ -128,36 +133,34 @@ Important: This is for informational purposes only and not financial advice."""
         messages = [
             {
                 "role": "system",
-                "content": """You are a trading plan advisor. Generate a phased trading plan based on:
-1. User's investment goals and risk tolerance
-2. Stock analysis
-3. Market conditions
+                "content": """你是一名交易计划顾问，必须使用简体中文，并依据以下信息生成分阶段交易计划：
+1. 用户投资目标与风险承受能力
+2. 股票分析
+3. 市场状况
 
-Provide a structured plan with:
-1. Entry points and conditions
-2. Position sizing
-3. Stop-loss levels
-4. Take-profit targets
-5. Timeline and milestones
-6. Risk management rules
+计划必须结构化呈现：
+1. 入场点与条件
+2. 仓位规模
+3. 止损位
+4. 止盈目标
+5. 时间线与里程碑
+6. 风险管理规则
 
-Important: This is for informational purposes only and not financial advice."""
+重要提示：内容仅供信息参考，不构成财务或投资建议。"""
             },
             {
                 "role": "user",
-                "content": f"""Generate a trading plan for:
+                "content": f"""请为以下信息生成详细的分阶段交易计划，并使用简体中文回答：
 
-Stock: {symbol}
-User Profile:
-- Target Return: {user_profile.get('target_return', 'N/A')}%
-- Investment Horizon: {user_profile.get('investment_horizon', 'N/A')}
-- Risk Tolerance: {user_profile.get('risk_tolerance', 'N/A')}
-- Available Capital: {user_profile.get('available_capital', 'N/A')}
+股票：{symbol}
+用户画像：
+- 目标收益：{user_profile.get('target_return', '暂无')}%
+- 投资周期：{user_profile.get('investment_horizon', '暂无')}
+- 风险承受能力：{user_profile.get('risk_tolerance', '暂无')}
+- 可用资金：{user_profile.get('available_capital', '暂无')}
 
-Stock Analysis:
-{stock_analysis.get('analysis', 'N/A')}
-
-Please provide a detailed phased trading plan."""
+股票分析：
+{stock_analysis.get('analysis', '暂无')}"""
             }
         ]
 
@@ -188,11 +191,11 @@ Please provide a detailed phased trading plan."""
         messages = [
             {
                 "role": "system",
-                "content": "You are a financial news summarizer. Provide concise summaries with key takeaways."
+                "content": "你是一名金融新闻摘要员。使用简体中文提供简洁摘要和关键结论，不增加原文没有的事实。"
             },
             {
                 "role": "user",
-                "content": f"Summarize the following news articles:\n{news_text}"
+                "content": f"请用简体中文总结下列新闻：\n{news_text}"
             }
         ]
 

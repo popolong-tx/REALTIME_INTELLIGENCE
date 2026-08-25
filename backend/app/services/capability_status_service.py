@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.database import check_cache_connection, check_db_connection
 from app.services.broker.longport_service import longport_service
 from app.services.emergency_shutdown_service import emergency_shutdown_service
+from app.services.login_service import login_service
 
 
 def capability(
@@ -39,8 +40,17 @@ async def build_readiness_report() -> Dict[str, Any]:
         and settings.BROKER_LIVE_TRADING_ENABLED
     )
     xgboost_available = importlib.util.find_spec("xgboost") is not None
+    pdf_export_available = importlib.util.find_spec("reportlab") is not None
 
     modules = {
+        "authentication": capability(
+            "operational" if login_service.configured else "configuration_required",
+            persistence="signed_http_only_cookie_and_database_audit",
+            reason="登录账号由服务端环境变量配置，会话使用签名 HttpOnly Cookie，登录与退出写入审计记录。"
+            if login_service.configured
+            else "需要配置 APP_LOGIN_USERNAME、APP_LOGIN_PASSWORD 和 AUTH_SESSION_SECRET。",
+            dependencies=["environment_configuration", "signed_session", "audit_trail"],
+        ),
         "market_research": capability(
             "operational" if settings.YAHOO_FINANCE_ENABLED else "configuration_required",
             persistence="provider_cache",
@@ -51,17 +61,33 @@ async def build_readiness_report() -> Dict[str, Any]:
         ),
         "grok_intelligence": capability(
             "operational" if grok_configured else "configuration_required",
-            persistence="database_monitor_history",
+            persistence="database_analysis_and_monitor_history",
             reason="OCI Responses 密钥和服务地址已配置。"
             if grok_configured
             else "实时 X/Web 检索需要配置 OCI_GENAI_API_KEY 和 OCI_GENAI_BASE_URL。",
             dependencies=["oci_responses", "x_search", "web_search", "code_interpreter"],
         ),
+        "intelligence_history": capability(
+            "operational" if database_ok else "unavailable",
+            persistence="workspace_scoped_immutable_database_snapshots",
+            reason="三类情报的真实或部分成功结果会保存完整输入与输出；页面可恢复当时内容并直接导出，不会重新调用 Grok。"
+            if database_ok
+            else "数据库连接失败，分析历史无法保存或读取。",
+            dependencies=["sqlite", "audit_trail", "reportlab"],
+        ),
         "intelligence_scheduler": capability(
             "operational",
             persistence="database",
-            reason="定时监控和执行历史已持久化；当前仍是单进程调度，未启用多实例租约。",
-            dependencies=["sqlite", "single_process_scheduler"],
+            reason="定时监控、执行历史和成功运行的 PDF 报告已持久化；当前仍是单进程调度，未启用多实例租约。",
+            dependencies=["sqlite", "single_process_scheduler", "reportlab"],
+        ),
+        "intelligence_pdf_export": capability(
+            "operational" if pdf_export_available else "unavailable",
+            persistence="database_metadata_and_filesystem",
+            reason="三类情报结果可导出 PDF；实时信息与项目风险监控的成功运行会自动保存可追溯报告。"
+            if pdf_export_available
+            else "PDF 生成依赖 ReportLab 未安装。",
+            dependencies=["reportlab", "cjk_font", "audit_trail", "artifact_store"],
         ),
         "recommendations": capability(
             "blocked" if mutations_blocked else "operational",
