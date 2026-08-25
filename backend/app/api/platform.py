@@ -97,6 +97,14 @@ async def get_platform_manifest():
                 "contract": "REST provider adapter",
             },
             {
+                "id": "overseas-market-data",
+                "name": "海外证券 API",
+                "category": "provider",
+                "status": "configured" if settings.TWELVE_DATA_API_KEY else "needs_configuration",
+                "scope": "tenant_secret",
+                "contract": "Twelve Data global symbol search + normalized quote + OHLCV history + provider provenance + entitlement-aware freshness",
+            },
+            {
                 "id": "oci-grok",
                 "name": "OCI Grok 决策情报",
                 "category": "intelligence",
@@ -150,7 +158,7 @@ async def get_platform_manifest():
                 "id": "data-provider",
                 "name": "数据提供商",
                 "interface": "ProviderAdapter",
-                "artifact": "provider manifest + normalized schemas",
+                "artifact": "provider manifest + normalized schemas + health + freshness/entitlement metadata",
             },
             {
                 "id": "strategy-package",

@@ -588,11 +588,37 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .connection-list > div { min-height: 78px; display: grid; grid-template-columns: 39px 1fr auto; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
 .connection-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; color: var(--green-deep); background: var(--green-pale); font-family: "DM Mono", monospace; font-size: 10px; }
 .connection-icon.grok { color: #7c55a8; background: #f0e9f8; }
+.connection-icon.overseas { color: #245f92; background: #e8f1fa; }
 .connection-icon.news { color: #3977b8; background: #e8f1fa; }
 .connection-icon.broker { color: #9b681e; background: #f9eedc; }
 .connection-icon.hook { color: #596964; background: #e9ede8; }
 .connection-list strong { display: block; font-size: 10px; }
 .connection-list small { margin-top: 4px; color: var(--subtle); font-size: 8px; }
+.overseas-api-panel { padding: 17px; margin-top: 14px; border: 1px solid #cbd9e3; border-radius: 11px; background: linear-gradient(145deg, #fbfdfd 0%, #f0f6fa 100%); }
+.overseas-api-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.overseas-api-head strong { display: block; font-size: 12px; }
+.overseas-api-head small { margin-top: 4px; color: var(--subtle); font-size: 8px; line-height: 1.55; }
+.overseas-query-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr .8fr; gap: 10px; margin-top: 15px; }
+.overseas-actions { flex-wrap: wrap; margin-top: 13px; }
+.overseas-result { min-width: 0; margin-top: 15px; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: rgb(255 255 255 / 78%); }
+.overseas-result .empty-state { min-height: 105px; }
+.overseas-quote { display: grid; grid-template-columns: minmax(180px, 1.2fr) repeat(4, minmax(90px, .7fr)); }
+.overseas-quote > div { min-width: 0; padding: 14px; border-right: 1px solid var(--line); }
+.overseas-quote > div:last-child { border-right: 0; }
+.overseas-quote span, .overseas-quote small { display: block; color: var(--subtle); font-size: 8px; overflow-wrap: anywhere; }
+.overseas-quote strong { display: block; margin: 6px 0 4px; font-size: 14px; overflow-wrap: anywhere; }
+.overseas-search-list { display: grid; }
+.overseas-search-item { min-width: 0; display: grid; grid-template-columns: minmax(100px, .55fr) minmax(160px, 1.45fr) minmax(115px, .75fr) auto; align-items: center; gap: 12px; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; }
+.overseas-search-item:last-child { border-bottom: 0; }
+.overseas-search-item:hover { background: var(--green-pale); }
+.overseas-search-item strong, .overseas-search-item span, .overseas-search-item small { min-width: 0; overflow-wrap: anywhere; }
+.overseas-search-item span { color: var(--muted); font-size: 9px; }
+.overseas-search-item small { color: var(--subtle); font-size: 8px; }
+.overseas-history-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.overseas-history-summary > div { padding: 14px; border-right: 1px solid var(--line); }
+.overseas-history-summary > div:last-child { border-right: 0; }
+.overseas-history-summary span, .overseas-history-summary small { display: block; color: var(--subtle); font-size: 8px; }
+.overseas-history-summary strong { display: block; margin: 6px 0 3px; font-size: 12px; overflow-wrap: anywhere; }
 .governance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--line); }
 .governance-grid > div { min-height: 105px; padding: 17px; background: var(--white); }
 .governance-grid span { display: block; color: var(--subtle); font-size: 8px; }
@@ -898,6 +924,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
   .workspace-pill > span:nth-child(2), .workspace-pill > svg { display: none; }
   .foundation-grid { grid-template-columns: 1fr 1fr; }
   .connector-catalog { grid-template-columns: 1fr 1fr; }
+  .overseas-query-grid { grid-template-columns: 1fr 1fr; }
   .grok-mission-card { grid-template-columns: 1fr; }
   .grok-mission-actions { grid-template-columns: repeat(3, 1fr); }
   .intelligence-workbench { grid-template-columns: 290px minmax(0, 1fr); }
@@ -1010,6 +1037,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
   .settings-nav button { min-width: max-content; }
   .governance-grid { grid-template-columns: 1fr 1fr; }
   .platform-context-grid, .connector-catalog, .readiness-grid, .extension-grid { grid-template-columns: 1fr; }
+  .overseas-query-grid, .overseas-quote, .overseas-history-summary { grid-template-columns: 1fr; }
+  .overseas-quote > div, .overseas-history-summary > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .overseas-quote > div:last-child, .overseas-history-summary > div:last-child { border-bottom: 0; }
+  .overseas-search-item { grid-template-columns: 1fr; gap: 5px; }
+  .overseas-actions .button { width: 100%; }
   .foundation-grid, .role-matrix { grid-template-columns: 1fr; }
   .workspace-modal-foot { align-items: stretch; flex-direction: column; }
   .workspace-modal-foot .button { width: 100%; }

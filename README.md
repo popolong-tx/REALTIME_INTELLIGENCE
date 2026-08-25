@@ -9,6 +9,7 @@
 ## ✨ 核心特性
 
 - 🔍 **智能股票搜索** - 支持美股、港股、A股等多市场
+- 🌍 **海外证券 API** - Twelve Data 全球证券搜索、报价与历史行情，服务端密钥配置并保留来源与时效说明
 - 💡 **AI 交易建议** - 基于量化模型的买卖建议
 - 🤖 **Grok 中文情报分析** - 以简体中文呈现实时 X/Web 检索、项目风险与地缘融资推演，并保留可核验的 X 原文
 - 📈 **模型训练管理** - 量化模型训练、回测与版本管理
@@ -87,6 +88,17 @@ OCI_GROK_MODEL_ID=xai.grok-4.3
 OCI_GROK_MULTI_AGENT_MODEL_ID=xai.grok-4.20-multi-agent
 ```
 
+### 海外证券 API 配置
+
+在 `backend/.env` 中配置 Twelve Data。密钥不会进入页面、浏览器存储或 API 响应；未配置时模块显示“待配置”，不会返回静态行情。
+
+```env
+TWELVE_DATA_API_KEY=your_twelve_data_key
+TWELVE_DATA_BASE_URL=https://api.twelvedata.com
+```
+
+实际数据可能是实时、延迟或日终，取决于 Twelve Data 套餐、交易所覆盖和市场数据授权。机构或客户化部署还需确认数据许可与再分发权利。
+
 ### 执行模式配置
 
 ```env
@@ -128,6 +140,15 @@ Grok_Quant_Demo/
 GET /api/v1/stocks/{symbol}/info        # 获取股票信息
 GET /api/v1/stocks/{symbol}/technical   # 技术分析
 GET /api/v1/stocks/{symbol}/news        # 相关新闻
+```
+
+### 海外证券数据
+```bash
+GET /api/v1/overseas-securities/providers              # 供应商能力与配置状态
+GET /api/v1/overseas-securities/search?q=SAP           # 搜索全球证券
+GET /api/v1/overseas-securities/AAPL/quote             # 标准化报价
+GET /api/v1/overseas-securities/AAPL/historical?period=1y&interval=1d
+GET /api/v1/overseas-securities/health/provider?probe=true  # 可选真实连接验证
 ```
 
 ### 交易建议

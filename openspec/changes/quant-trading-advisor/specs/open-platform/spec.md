@@ -65,6 +65,10 @@ The platform SHALL expose versioned contracts for data providers, strategy/model
 - **WHEN** an administrator installs a data provider
 - **THEN** the platform validates its manifest, normalized schemas, entitlements, secret requirements, health checks and supported markets before activation
 
+#### Scenario: Overseas provider awaits its server-side key
+- **WHEN** the Twelve Data connector is installed but `TWELVE_DATA_API_KEY` is absent
+- **THEN** the platform manifest and readiness API report `needs_configuration` or `configuration_required`, expose search/quote/history capabilities and the required secret name, and never expose the secret value
+
 #### Scenario: Strategy package installation
 - **WHEN** a strategy or model package is registered
 - **THEN** it includes an immutable version, required features, evidence schema, risk limits, compatible runtime and governance metadata

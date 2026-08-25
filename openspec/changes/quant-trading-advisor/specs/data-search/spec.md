@@ -21,6 +21,21 @@ The system SHALL present raw and adjusted price context, financial metrics, corp
 - **WHEN** a split, dividend or symbol change affects a requested period
 - **THEN** the system identifies the event and distinguishes raw from adjusted values
 
+### Requirement: Governed overseas-securities provider
+The system SHALL provide a server-configured overseas-securities adapter that supports global instrument search, normalized quote retrieval and OHLCV history, SHALL keep provider credentials outside browser assets and responses, and SHALL label provider, exchange/MIC, currency, provider time, ingestion time and freshness or entitlement limitations.
+
+#### Scenario: Overseas provider is configured
+- **WHEN** an authenticated user searches or requests a supported overseas security
+- **THEN** the system calls the configured Twelve Data API, normalizes the response, preserves source provenance, and returns no API credential to the client
+
+#### Scenario: Overseas provider is not configured
+- **WHEN** an authenticated user opens provider status or requests overseas market data without `TWELVE_DATA_API_KEY`
+- **THEN** status reports `configuration_required`, data endpoints return an explicit configuration error, and no static quote or historical series is substituted
+
+#### Scenario: Provider plan has delayed or unavailable market data
+- **WHEN** the configured plan or exchange entitlement cannot provide the requested freshness or market
+- **THEN** the system exposes the provider failure or returned freshness limitation and does not label the data as exchange-real-time by default
+
 ### Requirement: Derived indicators are reproducible
 The system SHALL bind every technical, fundamental or sentiment-derived indicator to its input snapshot, formula/model version and parameters, and SHALL NOT present a single indicator as a guaranteed buy or sell signal.
 

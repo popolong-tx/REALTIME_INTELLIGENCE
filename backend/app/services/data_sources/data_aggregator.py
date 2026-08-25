@@ -5,6 +5,8 @@ from enum import Enum
 
 from app.services.data_sources.yahoo_finance import yahoo_finance_service
 from app.services.data_sources.alpha_vantage import alpha_vantage_service
+from app.services.data_sources.twelve_data import twelve_data_service
+from app.core.config import settings
 from app.core.cache import cache
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,7 @@ logger = logging.getLogger(__name__)
 class DataSource(str, Enum):
     YAHOO_FINANCE = "yahoo_finance"
     ALPHA_VANTAGE = "alpha_vantage"
+    TWELVE_DATA = "twelve_data"
 
 
 class DataAggregator:
@@ -22,10 +25,13 @@ class DataAggregator:
         self.sources = {
             DataSource.YAHOO_FINANCE: yahoo_finance_service,
             DataSource.ALPHA_VANTAGE: alpha_vantage_service,
+            DataSource.TWELVE_DATA: twelve_data_service,
         }
         self.primary_source = DataSource.YAHOO_FINANCE
         self.source_status: Dict[DataSource, bool] = {
-            source: True for source in DataSource
+            DataSource.YAHOO_FINANCE: settings.YAHOO_FINANCE_ENABLED,
+            DataSource.ALPHA_VANTAGE: bool(settings.ALPHA_VANTAGE_API_KEY),
+            DataSource.TWELVE_DATA: twelve_data_service.configured,
         }
         self.last_error: Dict[DataSource, Optional[str]] = {
             source: None for source in DataSource
@@ -144,6 +150,7 @@ class DataAggregator:
         return {
             source.value: {
                 "healthy": self.source_status.get(source, False),
+                "configured": self._source_configured(source),
                 "last_error": self.last_error.get(source),
             }
             for source in DataSource
@@ -151,13 +158,22 @@ class DataAggregator:
 
     def reset_source_status(self, source: DataSource) -> None:
         """Reset status of a data source."""
-        self.source_status[source] = True
+        self.source_status[source] = self._source_configured(source)
         self.last_error[source] = None
 
     def set_primary_source(self, source: DataSource) -> None:
         """Set primary data source."""
         if source in self.sources:
             self.primary_source = source
+
+    def _source_configured(self, source: DataSource) -> bool:
+        if source == DataSource.YAHOO_FINANCE:
+            return settings.YAHOO_FINANCE_ENABLED
+        if source == DataSource.ALPHA_VANTAGE:
+            return bool(settings.ALPHA_VANTAGE_API_KEY)
+        if source == DataSource.TWELVE_DATA:
+            return twelve_data_service.configured
+        return False
 
 
 # Global aggregator instance

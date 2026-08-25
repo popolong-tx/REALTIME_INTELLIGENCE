@@ -271,6 +271,7 @@
     const labels = {
       authentication: '登录与会话保护',
       market_research: '行情与证券研究',
+      overseas_market_data: '海外证券 API',
       grok_intelligence: 'Grok 实时情报',
       intelligence_history: '情报分析历史',
       intelligence_scheduler: '情报定时监控',
@@ -346,6 +347,12 @@
       const market = status.features?.market_research;
       const [marketLabel, marketTone] = connectorStatus(market?.status || 'unavailable');
       setChip($('#conn-market'), marketLabel, marketTone);
+      const overseas = status.integrations?.overseas_securities;
+      const [overseasLabel, overseasTone] = connectorStatus(overseas?.status || 'configuration_required');
+      setChip($('#conn-overseas'), overseasLabel, overseasTone);
+      if ($('#overseas-connection-detail')) $('#overseas-connection-detail').textContent = overseas?.configured
+        ? 'Twelve Data 已配置 · 全球证券搜索、报价与历史行情'
+        : '适配器已接入 · 服务端需配置 TWELVE_DATA_API_KEY';
       renderCapabilityStatus(status.features || {});
       const grok = status.integrations?.oci_grok;
       if (grok?.status === 'operational') {
@@ -366,9 +373,89 @@
       $('#api-detail').textContent = error.message;
       $('#status-api').textContent = '不可用 · 可稍后重试';
       setChip($('#conn-market'), '不可用', 'error');
+      setChip($('#conn-overseas'), '不可用', 'error');
       renderCapabilityStatus({});
       return false;
     }
+  }
+
+  function overseasRequestParams() {
+    const query = $('#overseas-symbol').value.trim();
+    const country = $('#overseas-country').value.trim();
+    const exchange = $('#overseas-exchange').value.trim();
+    const suffix = `${country ? `&country=${encodeURIComponent(country)}` : ''}${exchange ? `&exchange=${encodeURIComponent(exchange)}` : ''}`;
+    return { query, country, exchange, suffix };
+  }
+
+  function renderOverseasError(error) {
+    $('#overseas-result').innerHTML = `<div class="empty-state small"><strong>海外证券数据暂不可用</strong><span>${escapeHtml(error.message || '请检查服务端供应商配置。')}</span></div>`;
+  }
+
+  async function loadOverseasProviderStatus(probe = false) {
+    const statusChip = $('#overseas-provider-status');
+    const detail = $('#overseas-provider-detail');
+    if (!statusChip || !detail) return null;
+    setChip(statusChip, probe ? '验证中' : '检查中', 'neutral');
+    try {
+      const payload = probe
+        ? await api(`/api/v1/overseas-securities/health/provider?probe=true&symbol=${encodeURIComponent($('#overseas-symbol').value.trim() || 'AAPL')}`, { timeout: 35000 })
+        : await api('/api/v1/overseas-securities/providers');
+      const provider = probe ? payload : (payload.providers || [])[0];
+      const [label, tone] = connectorStatus(provider?.status || 'configuration_required');
+      setChip(statusChip, label, tone);
+      setChip($('#conn-overseas'), label, tone);
+      detail.textContent = provider?.configured
+        ? `${provider.provider === 'twelve_data' ? 'Twelve Data' : provider.provider} · 搜索 / 报价 / 历史行情${probe ? ' · 连接验证通过' : ''}`
+        : '适配器已安装，需在服务端配置 TWELVE_DATA_API_KEY';
+      if (probe) toast('海外证券 API 连接正常', `${provider.probe_symbol || 'AAPL'} · ${provider.probe_source || 'twelve_data'}`);
+      return provider;
+    } catch (error) {
+      setChip(statusChip, '不可用', 'error');
+      setChip($('#conn-overseas'), '不可用', 'error');
+      detail.textContent = error.message;
+      renderOverseasError(error);
+      if (probe) toast('海外证券 API 验证失败', error.message, 'error');
+      return null;
+    }
+  }
+
+  async function queryOverseasQuote(event) {
+    event?.preventDefault();
+    const { query, suffix } = overseasRequestParams();
+    if (!query) { toast('请输入海外证券代码', '', 'error'); return; }
+    $('#overseas-result').innerHTML = '<div class="loading-state"><span class="spinner"></span>查询海外证券报价</div>';
+    try {
+      const quote = await api(`/api/v1/overseas-securities/${encodeURIComponent(query.toUpperCase())}/quote?${suffix.slice(1)}`, { timeout: 35000 });
+      const currency = quote.currency || '';
+      $('#overseas-result').innerHTML = `<div class="overseas-quote"><div><span>证券</span><strong>${escapeHtml(quote.symbol || query)} · ${escapeHtml(quote.name || '名称未返回')}</strong><small>${escapeHtml([quote.exchange, quote.mic_code, quote.market].filter(Boolean).join(' · ') || '市场未标注')}</small></div><div><span>最新价</span><strong>${escapeHtml(currency)} ${formatNumber(quote.current_price, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</strong><small>${escapeHtml(quote.provider_timestamp || quote.fetched_at || '时间未返回')}</small></div><div><span>涨跌</span><strong>${formatPercent(quote.price_change_percent)}</strong><small>${formatNumber(quote.price_change, { maximumFractionDigits: 4 })}</small></div><div><span>日内范围</span><strong>${formatNumber(quote.day_low, { maximumFractionDigits: 4 })} – ${formatNumber(quote.day_high, { maximumFractionDigits: 4 })}</strong><small>开盘 ${formatNumber(quote.open, { maximumFractionDigits: 4 })}</small></div><div><span>来源</span><strong>Twelve Data</strong><small>${escapeHtml(quote.freshness_note || '时效取决于供应商授权')}</small></div></div>`;
+    } catch (error) { renderOverseasError(error); }
+  }
+
+  async function searchOverseasSecurities() {
+    const { query, suffix } = overseasRequestParams();
+    if (!query) { toast('请输入证券代码或公司名称', '', 'error'); return; }
+    $('#overseas-result').innerHTML = '<div class="loading-state"><span class="spinner"></span>搜索全球证券目录</div>';
+    try {
+      const result = await api(`/api/v1/overseas-securities/search?q=${encodeURIComponent(query)}${suffix}`, { timeout: 35000 });
+      const items = result.results || [];
+      $('#overseas-result').innerHTML = items.length
+        ? `<div class="overseas-search-list">${items.map((item) => `<button class="overseas-search-item" type="button" data-overseas-symbol="${escapeHtml(item.symbol || '')}" data-overseas-country="${escapeHtml(item.country || '')}" data-overseas-exchange="${escapeHtml(item.exchange || '')}"><strong>${escapeHtml(item.symbol || '—')}</strong><span>${escapeHtml(item.name || '名称未返回')}</span><small>${escapeHtml([item.exchange, item.mic_code, item.country].filter(Boolean).join(' · ') || '市场未标注')}</small><em class="status-chip neutral">选择</em></button>`).join('')}</div>`
+        : '<div class="empty-state small"><strong>没有找到匹配证券</strong><span>请尝试证券代码、英文公司名，或补充国家和交易所。</span></div>';
+    } catch (error) { renderOverseasError(error); }
+  }
+
+  async function loadOverseasHistory() {
+    const { query, suffix } = overseasRequestParams();
+    if (!query) { toast('请输入海外证券代码', '', 'error'); return; }
+    const period = $('#overseas-period').value;
+    $('#overseas-result').innerHTML = '<div class="loading-state"><span class="spinner"></span>加载海外历史行情</div>';
+    try {
+      const result = await api(`/api/v1/overseas-securities/${encodeURIComponent(query.toUpperCase())}/historical?period=${encodeURIComponent(period)}&interval=1d${suffix}`, { timeout: 35000 });
+      const rows = result.data || [];
+      const first = rows[0] || {};
+      const latest = rows[rows.length - 1] || {};
+      $('#overseas-result').innerHTML = `<div class="overseas-history-summary"><div><span>证券 / 市场</span><strong>${escapeHtml(result.symbol || query)} · ${escapeHtml(result.exchange || '—')}</strong><small>${escapeHtml(result.currency || '')} · ${escapeHtml(result.exchange_timezone || '交易所本地时间')}</small></div><div><span>数据点</span><strong>${formatNumber(rows.length)}</strong><small>${escapeHtml(period)} · 日线</small></div><div><span>区间</span><strong>${escapeHtml(first.date || '—')} → ${escapeHtml(latest.date || '—')}</strong><small>按日期升序</small></div><div><span>最新收盘</span><strong>${escapeHtml(result.currency || '')} ${formatNumber(latest.close, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</strong><small>${escapeHtml(result.freshness_note || '时效取决于供应商套餐')}</small></div></div>`;
+    } catch (error) { renderOverseasError(error); }
   }
 
   function getCurrency(symbol) {
@@ -2460,7 +2547,7 @@
     $$('.settings-section').forEach((item) => item.classList.toggle('active', item.id === `settings-${section}`));
     const button = $('#save-settings');
     button.textContent = section === 'profile' ? '保存研究偏好' : section === 'brand' ? '保存品牌配置' : '保存配置草案';
-    if (section === 'connectors') { checkHealth(); checkBroker(); }
+    if (section === 'connectors') { checkHealth(); checkBroker(); loadOverseasProviderStatus(); }
     if (section === 'governance') loadGovernance();
     if (section === 'workspace') loadPlatformManifest();
   }
@@ -2607,6 +2694,18 @@
     $('#save-brand').addEventListener('click', saveBrandConfig);
     $('#reset-brand').addEventListener('click', resetBrandConfig);
     $('#check-health').addEventListener('click', async () => { const ok = await checkHealth(); toast(ok ? '数据服务正常' : '数据服务不可用', ok ? '行情与接口通过健康检查' : '请检查后端服务', ok ? 'success' : 'error'); });
+    $('#overseas-api-form').addEventListener('submit', queryOverseasQuote);
+    $('#search-overseas').addEventListener('click', searchOverseasSecurities);
+    $('#history-overseas').addEventListener('click', loadOverseasHistory);
+    $('#probe-overseas').addEventListener('click', () => loadOverseasProviderStatus(true));
+    $('#overseas-result').addEventListener('click', (event) => {
+      const item = event.target.closest('[data-overseas-symbol]');
+      if (!item) return;
+      $('#overseas-symbol').value = item.dataset.overseasSymbol || '';
+      $('#overseas-country').value = item.dataset.overseasCountry || '';
+      $('#overseas-exchange').value = item.dataset.overseasExchange || '';
+      queryOverseasQuote();
+    });
     $('#check-broker').addEventListener('click', checkBroker);
     $('#refresh-governance').addEventListener('click', loadGovernance);
     $$('[data-settings-section]').forEach((button) => button.addEventListener('click', () => switchSettingsSection(button.dataset.settingsSection)));

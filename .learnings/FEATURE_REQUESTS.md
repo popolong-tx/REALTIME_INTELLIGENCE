@@ -1,5 +1,34 @@
 # Feature Requests
 
+## [FEAT-20260825-009] overseas_securities_api_integration
+
+**Logged**: 2026-08-25T17:50:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Requested Capability
+Add a real overseas-securities market-data API integration to the open quantitative research platform.
+
+### User Context
+Individual and institutional users need configurable access to overseas equity identity, quotes, and historical prices, with explicit provider status and source provenance rather than relying on an ungoverned implicit feed.
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+Add a server-configured global-market provider with normalized quote/history/search contracts, integrate it into failover and health/readiness reporting, expose provider status and selection through versioned APIs and platform management UI, document symbol conventions and licensing/freshness limitations, and verify real configuration-required plus mocked provider-success paths.
+
+### Metadata
+- Frequency: recurring
+- Related Features: open_platform, market_research, provider_failover, module_readiness
+
+### Resolution
+- **Resolved**: 2026-08-25T18:36:00+08:00
+- **Notes**: Added a server-configured Twelve Data adapter with global symbol search, normalized quote and OHLCV history endpoints, cache and aggregator failover, configuration/readiness/manifest reporting, an operable platform-management panel, environment template, regression coverage, and OpenSpec/README updates. Verified 11/11 operational tests, strict OpenSpec validation, runtime 2026.08.25.26, desktop browser rendering, explicit configuration-required behavior without static fallback, and an error-free browser console. The provider-success contract is tested with controlled responses; live external acceptance remains dependent on supplying TWELVE_DATA_API_KEY and the selected market entitlements.
+
+---
+
 ## [FEAT-20260825-008] intelligence_analysis_history
 
 **Logged**: 2026-08-25T12:35:00+08:00

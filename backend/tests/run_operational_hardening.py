@@ -34,6 +34,7 @@ from app.services.intelligence_report_artifact_service import (
 )
 from app.services.institutional_intelligence_service import institutional_intelligence_service
 from app.services.intelligence_monitoring_service import IntelligenceMonitoringService
+from app.services.data_sources.twelve_data import twelve_data_service
 
 
 @contextmanager
@@ -112,6 +113,84 @@ def intelligence_pdf_sample(workflow):
 
 
 class OperationalHardeningTests(unittest.TestCase):
+    def test_overseas_securities_provider_is_real_and_truthful(self):
+        async def fake_twelve_request(endpoint, params):
+            if endpoint == "/symbol_search":
+                return {
+                    "data": [{
+                        "symbol": "QATEST",
+                        "instrument_name": "QA Global Equity",
+                        "exchange": "NASDAQ",
+                        "mic_code": "XNAS",
+                        "country": "United States",
+                        "currency": "USD",
+                        "instrument_type": "Common Stock",
+                        "access": {"global": "Basic"},
+                    }]
+                }
+            if endpoint == "/quote":
+                return {
+                    "symbol": "QATEST",
+                    "name": "QA Global Equity",
+                    "exchange": "NASDAQ",
+                    "mic_code": "XNAS",
+                    "country": "United States",
+                    "currency": "USD",
+                    "datetime": "2026-08-25",
+                    "open": "100.0",
+                    "high": "103.0",
+                    "low": "99.5",
+                    "close": "102.0",
+                    "previous_close": "100.0",
+                    "change": "2.0",
+                    "percent_change": "2.0",
+                    "volume": "123456",
+                    "is_market_open": False,
+                }
+            if endpoint == "/time_series":
+                return {
+                    "meta": {
+                        "symbol": "QATEST",
+                        "exchange": "NASDAQ",
+                        "mic_code": "XNAS",
+                        "currency": "USD",
+                        "exchange_timezone": "America/New_York",
+                    },
+                    "values": [
+                        {"datetime": "2026-08-22", "open": "99", "high": "101", "low": "98", "close": "100", "volume": "1000"},
+                        {"datetime": "2026-08-25", "open": "100", "high": "103", "low": "99.5", "close": "102", "volume": "123456"},
+                    ],
+                }
+            raise AssertionError(f"Unexpected Twelve Data endpoint: {endpoint}")
+
+        with authenticated_client() as client:
+            with patch.object(twelve_data_service, "api_key", None):
+                providers = client.get("/api/v1/overseas-securities/providers")
+                self.assertEqual(providers.status_code, 200)
+                self.assertFalse(providers.json()["providers"][0]["configured"])
+                unconfigured = client.get("/api/v1/overseas-securities/QATEST/quote")
+                self.assertEqual(unconfigured.status_code, 503)
+                self.assertIn("TWELVE_DATA_API_KEY", unconfigured.text)
+
+            with patch.object(twelve_data_service, "api_key", "qa-provider-secret"), patch.object(
+                twelve_data_service, "_request", side_effect=fake_twelve_request
+            ):
+                found = client.get("/api/v1/overseas-securities/search?q=QA")
+                self.assertEqual(found.status_code, 200, found.text)
+                self.assertEqual(found.json()["results"][0]["mic_code"], "XNAS")
+
+                quote = client.get("/api/v1/overseas-securities/QATEST/quote")
+                self.assertEqual(quote.status_code, 200, quote.text)
+                self.assertEqual(quote.json()["source"], "twelve_data")
+                self.assertEqual(quote.json()["current_price"], 102.0)
+
+                history = client.get(
+                    "/api/v1/overseas-securities/QATEST/historical?period=1mo&interval=1d"
+                )
+                self.assertEqual(history.status_code, 200, history.text)
+                self.assertEqual(history.json()["data"][-1]["close"], 102.0)
+                self.assertNotIn("qa-provider-secret", found.text + quote.text + history.text)
+
     def test_environment_login_protects_ui_and_business_api(self):
         self.assertTrue(settings.APP_LOGIN_USERNAME)
         self.assertTrue(settings.APP_LOGIN_PASSWORD)
@@ -622,6 +701,14 @@ class OperationalHardeningTests(unittest.TestCase):
             self.assertEqual(payload["features"]["authentication"]["status"], "operational")
             self.assertEqual(payload["features"]["intelligence_pdf_export"]["status"], "operational")
             self.assertEqual(payload["features"]["intelligence_history"]["status"], "operational")
+            self.assertIn(
+                payload["features"]["overseas_market_data"]["status"],
+                {"operational", "configuration_required"},
+            )
+            self.assertEqual(
+                payload["integrations"]["overseas_securities"]["provider"],
+                "twelve_data",
+            )
             self.assertEqual(
                 payload["features"]["intelligence_history"]["persistence"],
                 "workspace_scoped_immutable_database_snapshots",

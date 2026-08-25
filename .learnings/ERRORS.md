@@ -1,5 +1,228 @@
 # Errors
 
+## [ERR-20260825-095] in_app_tab_viewport_method_unavailable
+
+**Logged**: 2026-08-25T18:33:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend-qa
+
+### Summary
+The in-app browser tab wrapper does not expose Playwright's `setViewportSize` method directly.
+
+### Error
+```
+localTab.setViewportSize is not a function
+```
+
+### Context
+- Desktop visual QA had already succeeded.
+- This affected only an optional mobile-size browser inspection.
+
+### Suggested Fix
+Use the in-app browser's supported resize/emulation operation instead of assuming a raw Playwright page method.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/assets/app.css
+
+### Resolution
+- **Resolved**: 2026-08-25T18:34:00+08:00
+- **Notes**: Continued responsive validation through source breakpoint checks and the browser wrapper's supported capabilities.
+
+---
+
+## [ERR-20260825-094] prestartup_route_count_assumption_invalid
+
+**Logged**: 2026-08-25T18:30:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tooling
+
+### Summary
+The import-only smoke-check expected standard FastAPI routes to be materialized before the application's startup router initialization.
+
+### Error
+```
+AssertionError: overseas_routes=0
+```
+
+### Context
+- The application uses an internal included-router registration mechanism, so an import-only `app.routes` count is not a valid endpoint check.
+- Static source inspection and a live HTTP request are the appropriate checks for this application.
+
+### Suggested Fix
+Verify router inclusion in source, then exercise `/api/v1/overseas-securities/providers` against the running application.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/main_ui.py, backend/app/api/overseas_securities.py
+
+### Resolution
+- **Resolved**: 2026-08-25T18:31:00+08:00
+- **Notes**: Replaced the invalid pre-start route-count assertion with source wiring and live HTTP verification.
+
+---
+
+## [ERR-20260825-093] fastapi_route_table_contains_pathless_entry
+
+**Logged**: 2026-08-25T18:28:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tooling
+
+### Summary
+The route smoke-check assumed every application route entry exposes a `path` attribute, but the application also contains an internal included-router entry.
+
+### Error
+```
+AttributeError: '_IncludedRouter' object has no attribute 'path'
+```
+
+### Context
+- Importing the application succeeded.
+- The failure occurred only while formatting the diagnostic route list.
+
+### Suggested Fix
+Filter route entries with `getattr(route, "path", "")`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/main_ui.py
+
+### Resolution
+- **Resolved**: 2026-08-25T18:29:00+08:00
+- **Notes**: Re-ran the route check using a safe attribute lookup.
+
+---
+
+## [ERR-20260825-092] backend_venv_relative_path_mismatch
+
+**Logged**: 2026-08-25T18:26:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tooling
+
+### Summary
+The application import check used a project-root virtual-environment path while its working directory was already `backend`.
+
+### Error
+```
+zsh: no such file or directory: backend/venv/bin/python
+```
+
+### Context
+- The application code had not started; this was only a command path mismatch.
+
+### Suggested Fix
+Use `venv/bin/python` from the backend working directory or run the root-relative path from the project root.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/main_ui.py
+
+### Resolution
+- **Resolved**: 2026-08-25T18:27:00+08:00
+- **Notes**: Re-ran the import check with the correct working-directory-relative interpreter path.
+
+---
+
+## [ERR-20260825-091] readonly_shell_heredoc_tempfile_denied
+
+**Logged**: 2026-08-25T18:24:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tooling
+
+### Summary
+The read-only execution environment rejected shell here-documents used for static checks because the shell could not create temporary files.
+
+### Error
+```
+zsh: can't create temp file for here document: operation not permitted
+```
+
+### Context
+- The attempted checks were read-only Python AST and CSS balance checks.
+- No application file was changed and no application test failed.
+
+### Suggested Fix
+Use inline `python3 -c` expressions instead of shell here-documents in read-only execution mode.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/services/data_sources/twelve_data.py, frontend/public/assets/app.css
+
+### Resolution
+- **Resolved**: 2026-08-25T18:25:00+08:00
+- **Notes**: Re-ran the checks with inline expressions that do not create temporary shell files.
+
+---
+
+## [ERR-20260825-090] overseas_openspec_patch_context_mismatch
+
+**Logged**: 2026-08-25T18:18:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+The combined overseas-securities documentation patch assumed wording that did not exactly match the open-platform specification.
+
+### Error
+```
+apply_patch verification failed: expected open-platform provider validation scenario was not found
+```
+
+### Context
+- The patch combined data-search, open-platform, tasks, design, and README updates.
+- Verification failed before the documentation files were changed.
+
+### Suggested Fix
+Read the exact open-platform requirement and update each document independently.
+
+### Metadata
+- Reproducible: yes
+- Related Files: openspec/changes/quant-trading-advisor/specs/open-platform/spec.md
+
+### Resolution
+- **Resolved**: 2026-08-25T18:19:00+08:00
+- **Notes**: Split the documentation updates and anchored them to exact current headings.
+
+---
+
+## [ERR-20260825-089] overseas_api_multi_file_patch_context_mismatch
+
+**Logged**: 2026-08-25T18:05:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: backend
+
+### Summary
+The first multi-file overseas-securities integration patch used an outdated import line for the legacy application entrypoint.
+
+### Error
+```
+apply_patch verification failed: Failed to find expected lines in backend/app/main.py
+```
+
+### Context
+- The patch included new service/API files plus current and legacy application wiring.
+- Patch verification failed before any part of the patch was applied.
+
+### Suggested Fix
+Inspect the exact legacy entrypoint imports and apply the integration in smaller verified patches.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend/app/main.py, backend/app/main_ui.py
+
+### Resolution
+- **Resolved**: 2026-08-25T18:06:00+08:00
+- **Notes**: Split the change into focused patches and used the exact current import contexts.
+
+---
+
 ## [ERR-20260825-088] browser_locator_scroll_helper_unavailable
 
 **Logged**: 2026-08-25T17:29:00+08:00

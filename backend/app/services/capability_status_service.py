@@ -35,6 +35,9 @@ async def build_readiness_report() -> Dict[str, Any]:
     grok_configured = bool(
         settings.OCI_GENAI_API_KEY and settings.OCI_GENAI_BASE_URL
     )
+    overseas_data_configured = bool(
+        settings.TWELVE_DATA_API_KEY and settings.TWELVE_DATA_BASE_URL
+    )
     live_broker_enabled = (
         settings.EXECUTION_MODE == "live"
         and settings.BROKER_LIVE_TRADING_ENABLED
@@ -58,6 +61,14 @@ async def build_readiness_report() -> Dict[str, Any]:
             if settings.YAHOO_FINANCE_ENABLED
             else "当前没有启用市场数据适配器。",
             dependencies=["yahoo_finance"],
+        ),
+        "overseas_market_data": capability(
+            "operational" if overseas_data_configured else "configuration_required",
+            persistence="provider_cache",
+            reason="Twelve Data 全球证券搜索、报价和历史行情适配器已配置；每条结果保留供应商、市场、币种和采集时间。"
+            if overseas_data_configured
+            else "海外证券适配器已实现；使用前需在服务端配置 TWELVE_DATA_API_KEY。",
+            dependencies=["twelve_data", "provider_entitlements", "exchange_licensing"],
         ),
         "grok_intelligence": capability(
             "operational" if grok_configured else "configuration_required",
@@ -166,6 +177,14 @@ async def build_readiness_report() -> Dict[str, Any]:
         },
         "modules": modules,
         "integrations": {
+            "overseas_securities": {
+                "status": "operational" if overseas_data_configured else "configuration_required",
+                "configured": overseas_data_configured,
+                "provider": "twelve_data",
+                "base_url": settings.TWELVE_DATA_BASE_URL,
+                "capabilities": ["symbol_search", "quote", "time_series"],
+                "freshness": "provider_plan_and_exchange_entitlement",
+            },
             "oci_grok": {
                 "status": "operational" if grok_configured else "configuration_required",
                 "configured": grok_configured,

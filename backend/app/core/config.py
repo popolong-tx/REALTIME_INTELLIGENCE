@@ -68,6 +68,8 @@ class Settings(BaseSettings):
     # Data Sources
     YAHOO_FINANCE_ENABLED: bool = True
     ALPHA_VANTAGE_API_KEY: Optional[str] = None
+    TWELVE_DATA_API_KEY: Optional[str] = None
+    TWELVE_DATA_BASE_URL: str = "https://api.twelvedata.com"
     TUSHARE_TOKEN: Optional[str] = None
 
     class Config:

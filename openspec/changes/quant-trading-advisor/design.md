@@ -32,6 +32,7 @@
 |---|---|---|---|
 | 登录与会话保护 | `operational + incomplete` | 测试账号与密码从 `backend/.env` 读取；未登录访问产品页会转到登录页，业务 API 返回 401；成功登录签发限时、签名、HttpOnly、SameSite 会话 Cookie；失败尝试限流，登录/退出写入审计 | 当前为单一测试管理员账号；生产仍需企业 SSO/SCIM、多用户目录、RBAC、租户作用域、会话撤销、集中密钥和 HTTPS `Secure` Cookie |
 | 今日行情、发现筛选、证券研究 | `operational` | Yahoo Finance 行情、历史价格、技术指标和财务数据可实际返回；筛选会执行行情与技术查询 | 关注列表和候选池仍是浏览器本地数据，数据授权与供应商 SLA 未建立 |
+| 海外证券 API | `configuration_required`（配置后 `operational`） | Twelve Data 适配器、全球证券搜索、标准化报价、日线/盘中 OHLCV、服务端密钥、缓存、故障切换、状态与平台管理操作入口已实现 | 当前部署未提供 `TWELVE_DATA_API_KEY`；实时/延迟/EOD 时效、交易所覆盖与再分发权利取决于供应商套餐和市场授权 |
 | 证券页 Grok 情报 | `operational`（配置依赖） | 当前部署已配置 OCI Grok；搜索与语义分析失败时不生成静态情报 | 旧语义接口仍需统一未配置、配额和工具降级错误契约 |
 | 实时信息、项目风险、地缘融资推演 | `operational`（配置依赖） | OCI Responses、X Search、Web Search、Code Interpreter、引用账本和无配置降级契约已实现；2026-08-25 已完成一次真实多工具检索验收 | 仍依赖部署环境的 OCI 凭证、配额和工具可用性；外部来源是尽力覆盖而非平台全量 |
 | 情报分析历史 | `operational` | 三类情报的 `live/partial` 结果均保存工作区级不可变输入/输出快照；页面可按类型列出、点击恢复当时表单与完整结果、直接导出当时 PDF；定时监控结果进入同一历史；跨工作区读取返回 404 | 本地 SQLite 尚未实现机构级 RBAC、保留/法律留置、加密归档、全文检索和历史版本审批；当前页面最多加载最近 50 条 |
@@ -148,10 +149,17 @@
 ### 6. 数据源：多源聚合策略
 
 **选择理由：**
-- 集成多个数据源（如 Yahoo Finance、Alpha Vantage、Tushare）
+- 集成多个数据源（Yahoo Finance、Alpha Vantage、Twelve Data、Tushare）
 - 提高数据可靠性和覆盖范围
 - 支持数据源故障切换
 - 所有数据带时间戳和来源追踪
+
+**海外证券当前基线：**
+- Twelve Data 通过 `TWELVE_DATA_API_KEY` 与 `TWELVE_DATA_BASE_URL` 在服务端配置，浏览器只读取配置状态与规范化结果
+- 版本化 API 提供供应商清单、`symbol_search`、`quote`、`time_series`，返回证券、交易所/MIC、国家、币种、供应商时间、采集时间和时效说明
+- 未配置密钥时模块保持 `configuration_required`，查询返回真实 503，不使用 Yahoo 或静态样例冒充 Twelve Data 结果
+- Twelve Data 同时加入行情聚合故障切换；只有配置完成时才进入候选数据源
+- “实时”不能由平台自行推定，必须服从供应商套餐、交易所授权和返回元数据；生产使用还需完成数据许可与再分发评估
 
 **备选方案：**
 - 单一数据源：简单但风险集中

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import logging
 import os
 
-from app.api import auth, stocks, search, models, recommendations, user, governance, platform, intelligence
+from app.api import auth, stocks, search, models, recommendations, user, governance, platform, intelligence, overseas_securities
 from app.api import broker, webhooks
 from app.core.config import settings
 from app.core.database import init_db
@@ -18,7 +18,7 @@ from app.services.capability_status_service import build_readiness_report
 
 logger = logging.getLogger(__name__)
 
-UI_RUNTIME_VERSION = "2026.08.25.25"
+UI_RUNTIME_VERSION = "2026.08.25.26"
 APP_STARTED_AT = datetime.now(timezone.utc).isoformat()
 
 # Resolve the product shell from the repository root so the same layout works
@@ -100,6 +100,7 @@ app.include_router(user.router)
 app.include_router(governance.router)
 app.include_router(platform.router)
 app.include_router(intelligence.router)
+app.include_router(overseas_securities.router)
 app.include_router(broker.router)
 app.include_router(webhooks.router)
 
