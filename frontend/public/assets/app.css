@@ -744,6 +744,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .geo-brief { border-color: #d8d0e7; background: linear-gradient(160deg, #fdfcfe 0%, #f7f3fb 100%); }
 .result-status { text-align: right; }
 .result-status small { margin-top: 5px; color: var(--subtle); font-family: "DM Mono", monospace; font-size: 8px; }
+.result-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.intelligence-pdf-button { min-height: 32px; padding: 0 10px; color: var(--green-deep); background: rgb(255 255 255 / 72%); white-space: nowrap; }
+.geo-brief .intelligence-pdf-button { color: #644699; }
 .brief-placeholder { min-height: 95px; display: flex; flex-direction: column; justify-content: center; padding: 18px; margin-top: 10px; border: 1px dashed var(--line-strong); border-radius: 10px; background: rgb(255 255 255 / 60%); }
 .brief-placeholder strong { font-size: 12px; }
 .brief-placeholder span { max-width: 700px; margin-top: 7px; color: var(--subtle); font-size: 9px; line-height: 1.65; }
@@ -975,6 +978,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
   .realtime-item-meta time { width: 100%; order: 3; }
   .realtime-item-foot { align-items: flex-start; flex-direction: column; }
   .coverage-callout { grid-template-columns: 1fr; gap: 6px; }
+  .decision-brief-panel .panel-head { align-items: stretch; flex-direction: column; }
+  .result-toolbar { justify-content: space-between; }
+  .result-status { text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {

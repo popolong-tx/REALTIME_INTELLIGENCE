@@ -1,14 +1,20 @@
 """Institutional Grok intelligence and multi-source research endpoints."""
 
 from datetime import date
+from io import BytesIO
+import json
 from typing import Any, Dict, List, Literal, Optional
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.services.institutional_intelligence_service import institutional_intelligence_service
+from app.services.intelligence_pdf_service import intelligence_pdf_service
+from app.services.audit_trail_service import audit_trail_service, AuditEventType
 from app.services.intelligence_monitoring_service import (
     MonitorAlreadyRunningError,
     MonitorNotFoundError,
@@ -78,6 +84,12 @@ class IntelligenceMonitorUpdate(BaseModel):
         Literal[30, 60, 120, 240, 360, 480, 720, 1440]
     ] = None
     is_active: Optional[bool] = None
+
+
+class IntelligencePdfExportRequest(BaseModel):
+    workflow: Literal["realtime-research", "project-risk", "geopolitical-impact"]
+    result: Dict[str, Any]
+    query_context: Dict[str, Any] = Field(default_factory=dict)
 
 
 def _validated_monitor_payload(
@@ -226,3 +238,57 @@ async def analyze_geopolitical_impact(request: GeopoliticalImpactRequest):
         return await institutional_intelligence_service.analyze_geopolitical_impact(request.model_dump())
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"地缘融资推演失败：{exc}") from exc
+
+
+@router.post("/export/pdf")
+async def export_intelligence_pdf(
+    export_request: IntelligencePdfExportRequest,
+    http_request: Request,
+):
+    """Render a completed intelligence result without re-running the model."""
+    serialized_size = len(
+        json.dumps(export_request.model_dump(mode="json"), ensure_ascii=False).encode("utf-8")
+    )
+    if serialized_size > 2_000_000:
+        raise HTTPException(status_code=413, detail="分析结果过大，无法安全导出 PDF")
+    try:
+        report = intelligence_pdf_service.generate(
+            export_request.workflow,
+            export_request.result,
+            export_request.query_context,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"PDF 生成失败：{exc}") from exc
+
+    audit = export_request.result.get("audit") or {}
+    await audit_trail_service.log_event(
+        event_type=AuditEventType.DATA_ACCESS,
+        user_id=str(audit.get("workspace_id") or "personal"),
+        resource_type="intelligence_report",
+        resource_id=report.report_id,
+        action="export_pdf",
+        details={
+            "workflow": export_request.workflow,
+            "source_request_id": audit.get("request_id"),
+            "content_bytes": len(report.content),
+            "template_version": "1.0",
+        },
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+    encoded_filename = quote(report.filename)
+    return StreamingResponse(
+        BytesIO(report.content),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="intelligence-report.pdf"; '
+                f"filename*=UTF-8''{encoded_filename}"
+            ),
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "X-Intelligence-Request-Id": report.report_id,
+        },
+    )

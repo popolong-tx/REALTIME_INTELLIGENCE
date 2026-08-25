@@ -1,5 +1,37 @@
 # Errors
 
+## [ERR-20260825-055] apply_patch_permission_review_timeout
+
+**Logged**: 2026-08-25T00:05:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+A multi-hunk frontend patch was not applied because the automatic permission review timed out.
+
+### Error
+```
+The automatic permission approval review did not finish before its deadline.
+```
+
+### Context
+- The patch added PDF export state, download handling, and three button bindings in one JavaScript file.
+- A read-only follow-up confirmed none of the target symbols were written.
+
+### Suggested Fix
+Retry once using smaller, independently verifiable patches.
+
+### Metadata
+- Reproducible: unknown
+- Related Files: frontend/public/assets/app.js
+
+### Resolution
+- **Resolved**: 2026-08-25T00:06:00+08:00
+- **Notes**: Confirmed no partial write and split the frontend update into smaller patches.
+
+---
+
 ## [ERR-20260824-053] live_broker_mutation_probe_rejected
 
 **Logged**: 2026-08-24T15:37:00+08:00

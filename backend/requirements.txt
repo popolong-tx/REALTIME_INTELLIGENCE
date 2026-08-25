@@ -39,6 +39,9 @@ passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 pydantic==2.5.2
 pydantic-settings==2.1.0
+reportlab==4.4.9
+pypdf==6.7.4
+pdfplumber==0.11.9
 
 # Testing
 pytest==7.4.3

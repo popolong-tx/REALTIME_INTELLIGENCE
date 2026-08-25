@@ -775,6 +775,12 @@
     escalate: '升级至管理层',
   };
 
+  const INTELLIGENCE_PDF_META = {
+    'realtime-research': { stateKey: 'realtimeResearch', button: '#export-realtime-pdf', label: '实时信息检索' },
+    'project-risk': { stateKey: 'projectRisk', button: '#export-project-risk-pdf', label: '项目风险情报' },
+    'geopolitical-impact': { stateKey: 'geopoliticalImpact', button: '#export-geo-pdf', label: '地缘融资推演' },
+  };
+
   function splitList(value) {
     return String(value || '').split(/[,，;；\n]/).map((item) => item.trim()).filter(Boolean);
   }
@@ -855,6 +861,74 @@
     return state.intelligenceCapabilities;
   }
 
+  function intelligencePdfContext(workflow) {
+    if (workflow === 'realtime-research') return realtimeResearchPayload();
+    if (workflow === 'project-risk') return projectRiskPayload();
+    return geopoliticalPayload();
+  }
+
+  function updateIntelligencePdfButton(workflow, result) {
+    const meta = INTELLIGENCE_PDF_META[workflow];
+    const button = meta ? $(meta.button) : null;
+    if (!button) return;
+    const exportable = ['live', 'partial'].includes(result?.status)
+      && result?.workflow === workflow
+      && result?.analysis
+      && Object.keys(result.analysis).length > 0;
+    button.disabled = !exportable;
+    button.title = exportable ? `将${meta.label}结果导出为 PDF` : '完成真实分析后可导出 PDF';
+  }
+
+  function pdfDownloadFilename(response, workflow) {
+    const disposition = response.headers.get('content-disposition') || '';
+    const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+    if (encoded) {
+      try { return decodeURIComponent(encoded); } catch (_) { /* use fallback */ }
+    }
+    return `${INTELLIGENCE_PDF_META[workflow]?.label || '情报分析'}-${new Date().toISOString().slice(0, 10)}.pdf`;
+  }
+
+  async function downloadIntelligencePdf(workflow) {
+    const meta = INTELLIGENCE_PDF_META[workflow];
+    const result = meta ? state[meta.stateKey] : null;
+    const button = meta ? $(meta.button) : null;
+    if (!meta || !button || !['live', 'partial'].includes(result?.status)) {
+      toast('暂无可导出的真实分析结果', '请先完成对应的实时检索或推演', 'error');
+      return;
+    }
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner small"></span>生成 PDF';
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/intelligence/export/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workflow, result, query_context: intelligencePdfContext(workflow) }),
+      });
+      if (!response.ok) {
+        const type = response.headers.get('content-type') || '';
+        const payload = type.includes('application/json') ? await response.json() : await response.text();
+        throw new Error(typeof payload === 'object' ? (payload.detail || 'PDF 生成失败') : payload);
+      }
+      const blob = await response.blob();
+      if (blob.type !== 'application/pdf' || blob.size < 1000) throw new Error('服务端没有返回有效 PDF');
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = pdfDownloadFilename(response, workflow);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+      toast('PDF 已生成', `${meta.label} · ${(blob.size / 1024).toFixed(1)} KB`, 'success');
+    } catch (error) {
+      toast('PDF 导出失败', error.message, 'error');
+    } finally {
+      button.innerHTML = original;
+      updateIntelligencePdfButton(workflow, result);
+    }
+  }
+
   function realtimeResearchPayload() {
     return {
       query: $('#realtime-query').value.trim(),
@@ -912,6 +986,7 @@
     $('#realtime-trend-count').textContent = `${trends.length} 个`;
     $('#realtime-trends').innerHTML = trends.length ? trends.map((item) => `<div class="realtime-trend"><span>${escapeHtml({ rising: '↑', falling: '↓', stable: '→', unclear: '?' }[item.direction] || '?')}</span><div><strong>${escapeHtml(item.label || '未命名趋势')}</strong><p>${escapeHtml(item.evidence || '没有提供证据说明。')}</p><small>${escapeHtml((item.source_refs || []).join(' · ') || '未映射具体来源')}</small></div></div>`).join('') : '<div class="empty-state small"><strong>没有可验证趋势</strong><span>没有足够证据时不会生成趋势占位值。</span></div>';
     state.realtimeResearch = result;
+    updateIntelligencePdfButton('realtime-research', result);
     renderRealtimeItems();
     renderInstitutionalSources('#realtime-sources', result?.evidence || []);
     const warnings = result?.warnings || [];
@@ -956,6 +1031,7 @@
   }
 
   function renderProjectRiskResult(result) {
+    state.projectRisk = result;
     const analysis = result?.analysis || {};
     const live = ['live', 'partial'].includes(result?.status);
     const configuredMessage = result?.configuration?.message;
@@ -980,6 +1056,7 @@
       return `<div class="ground-signal"><span class="signal-time">${escapeHtml(item.observed_at || '时间未知')}</span><div><div class="signal-title"><strong>${escapeHtml(item.title || '未命名事件')}</strong><em class="status-chip ${status}">${escapeHtml(label)}</em></div><p>${escapeHtml(item.impact || '影响尚未评估。')}</p><small>${escapeHtml((item.source_refs || []).join(' · ') || '未映射具体来源')}</small></div></div>`;
     }).join('') : '<div class="empty-state small"><strong>没有可展示的实时事件</strong><span>未运行或证据不足时不会生成占位事件。</span></div>';
     renderInstitutionalSources('#project-risk-sources', result?.evidence || []);
+    updateIntelligencePdfButton('project-risk', result);
   }
 
   async function runProjectRisk(event) {
@@ -1207,6 +1284,7 @@
   }
 
   function renderGeopoliticalResult(result) {
+    state.geopoliticalImpact = result;
     const analysis = result?.analysis || {};
     const live = ['live', 'partial'].includes(result?.status);
     setChip($('#geo-status'), live ? '推演完成' : 'OCI 待配置', live ? 'healthy' : 'partial');
@@ -1233,6 +1311,7 @@
     const assumptions = [...(analysis.assumptions || []).map((item) => ({ type: '假设', copy: item })), ...(analysis.unknowns || []).map((item) => ({ type: '未知', copy: item }))];
     $('#geo-assumptions').innerHTML = assumptions.length ? assumptions.map((item) => `<div><span>${escapeHtml(item.type)}</span><p>${escapeHtml(item.copy)}</p></div>`).join('') : '<div class="empty-state small"><strong>尚无假设</strong><span>关键不确定性必须显式呈现。</span></div>';
     renderInstitutionalSources('#geo-sources', result?.evidence || []);
+    updateIntelligencePdfButton('geopolitical-impact', result);
   }
 
   async function runGeopoliticalAnalysis(event) {
@@ -2146,6 +2225,9 @@
     $('#project-risk-form').addEventListener('submit', runProjectRisk);
     $('#save-project-monitor').addEventListener('click', () => createIntelligenceMonitor('project_risk'));
     $('#geo-form').addEventListener('submit', runGeopoliticalAnalysis);
+    $('#export-realtime-pdf').addEventListener('click', () => downloadIntelligencePdf('realtime-research'));
+    $('#export-project-risk-pdf').addEventListener('click', () => downloadIntelligencePdf('project-risk'));
+    $('#export-geo-pdf').addEventListener('click', () => downloadIntelligencePdf('geopolitical-impact'));
     $('#close-wizard').addEventListener('click', closeWizard);
     $('#wizard-next').addEventListener('click', nextWizardStep);
     $('#wizard-back').addEventListener('click', previousWizardStep);

@@ -9,44 +9,84 @@ env/
 *.egg-info/
 dist/
 build/
+.eggs/
 
 # Database
 *.db
 *.db-shm
 *.db-wal
 *.sqlite
+*.sqlite3
 
 # Environment
 .env
 .env.local
 .env.production
+.env.*.local
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.settings/
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Logs
 *.log
 logs/
+*.log.*
 
 # Models
 models/*.joblib
 models/*.pkl
+models/*.h5
+models/*.pt
 
 # Node
 node_modules/
 npm-debug.log*
+yarn-error.log*
+yarn.lock
 
 # Build
 frontend/build/
 frontend/dist/
+*.tgz
 
 # Cache
 .cache/
 *.cache
+.pytest_cache/
+.mypy_cache/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Testing
+.tox/
+.nox/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+
+# Temporary
+tmp/
+temp/
+*.tmp
+*.temp

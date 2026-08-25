@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     OCI_GROK_MODEL_ID: str = "xai.grok-4.3"
     OCI_GROK_MULTI_AGENT_MODEL_ID: str = "xai.grok-4.20-multi-agent"
 
+    # Optional embedded font for generated Chinese PDF reports. When omitted,
+    # the renderer discovers common system fonts and falls back to STSong.
+    PDF_FONT_PATH: Optional[str] = None
+
     # Legacy direct-xAI settings. New real-time research must use the OCI
     # Responses API above; these names remain for backward compatibility.
     XAI_API_KEY: Optional[str] = None
