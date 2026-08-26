@@ -18,7 +18,7 @@ from app.services.capability_status_service import build_readiness_report
 
 logger = logging.getLogger(__name__)
 
-UI_RUNTIME_VERSION = "2026.08.25.26"
+UI_RUNTIME_VERSION = "2026.08.26.1"
 APP_STARTED_AT = datetime.now(timezone.utc).isoformat()
 
 # Resolve the product shell from the repository root so the same layout works

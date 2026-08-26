@@ -109,6 +109,11 @@ The system SHALL comply with WCAG 2.2 AA accessibility standards.
 - **WHEN** user accesses system on different devices
 - **THEN** system adapts layout for optimal viewing at various screen sizes
 
+#### Scenario: Typography remains readable in cards
+- **WHEN** the system renders quotes, research queues, evidence, risks, scenarios, plans or platform status inside cards
+- **THEN** default body text uses the shared product baseline, primary card content remains larger than compact metadata, and no explicit visible label is smaller than the compact-label minimum
+- **AND** at 200% zoom or narrow reflow, text wraps or the container becomes reachable without covering adjacent content
+
 #### Scenario: High contrast support
 - **WHEN** user enables high contrast mode
 - **THEN** system adjusts color scheme for improved visibility

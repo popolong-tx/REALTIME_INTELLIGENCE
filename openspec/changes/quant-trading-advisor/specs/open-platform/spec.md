@@ -132,3 +132,8 @@ The product shell and login experience SHALL remain usable in current phone, tab
 - **WHEN** a user opens a primary workflow
 - **THEN** the first heading names the task, such as “检索实时公开信息” or “监测项目实时风险”
 - **AND** supporting copy explains scope and limitations instead of replacing the page name with a slogan
+
+#### Scenario: Readable dense cards
+- **WHEN** a dashboard, analysis result, plan, model or connector card displays dense content at default browser zoom
+- **THEN** the product applies the shared readable type hierarchy, keeps compact auxiliary labels at or above the platform minimum, and gives titles, primary values and explanatory copy visually distinct sizes
+- **AND** increased text size is accommodated through natural card growth, wrapping, responsive stacking or reachable scrolling instead of clipping, overlap or shrinking the content below the minimum

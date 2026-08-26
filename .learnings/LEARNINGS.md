@@ -1,5 +1,36 @@
 # Learnings
 
+## [LRN-20260826-001] correction
+
+**Logged**: 2026-08-26T09:20:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The product's typography is undersized overall, with card titles, descriptions, metadata, and status content requiring a clearer readable scale.
+
+### Details
+The user reported that the interface text is generally slightly too small and that card content is especially difficult to read. The existing stylesheet frequently uses 7–10px text inside cards, which is visually dense on desktop and becomes harder to scan on tablets and phones.
+
+### Suggested Action
+Raise the global base size modestly, establish a larger minimum type scale for card titles/body/metadata/status labels, retain the existing hierarchy, and verify that denser dashboards and responsive layouts do not clip or overlap.
+
+### Metadata
+- Source: user_feedback
+- Related Files: frontend/public/assets/app.css, frontend/public/index.html, backend/app/main_ui.py
+- Tags: accessibility, typography, cards, readability, responsive, visual-qa
+- Pattern-Key: improve.product_typography_readability
+- Recurrence-Count: 1
+- First-Seen: 2026-08-26
+- Last-Seen: 2026-08-26
+
+### Resolution
+- **Resolved**: 2026-08-26T09:40:00+08:00
+- **Notes**: Raised the global base from 14px to 15px, increased 7–13px interface text by 2px and 14–16px text by 1px, lifted the remaining 6px PDF badge to 9px, retained existing hierarchy and responsive structure, and updated the runtime to 2026.08.26.1. Verified that all 295 stylesheet line changes are font-size-only, the minimum explicit size is now 9px, CSS braces and application syntax are valid, and strict OpenSpec validation passes. Automated live-page refresh was blocked by browser URL policy, so the existing tab requires a manual refresh to load the cache-busted stylesheet.
+
+---
+
 ## [LRN-20260825-005] correction
 
 **Logged**: 2026-08-25T17:25:00+08:00

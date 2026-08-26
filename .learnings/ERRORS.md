@@ -1,5 +1,101 @@
 # Errors
 
+## [ERR-20260826-003] typography_minimum_assertion_found_6px_label
+
+**Logged**: 2026-08-26T09:35:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+The post-change typography audit found one remaining 6px label because the mechanical scale update originally targeted 7–16px declarations.
+
+### Error
+```
+AssertionError: font_size_min=6
+```
+
+### Context
+- CSS brace balance, JavaScript syntax, Python syntax, and strict OpenSpec validation otherwise succeeded.
+- The remaining declaration violates the intended readable minimum for visible interface text.
+
+### Suggested Fix
+Locate the 6px declaration, raise it to the new compact-label minimum, and rerun the distribution and syntax checks.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/public/assets/app.css
+
+### Resolution
+- **Resolved**: 2026-08-26T09:36:00+08:00
+- **Notes**: Raised the remaining PDF report badge from 6px to the compact-label minimum of 9px and reran the typography audit.
+
+---
+
+## [ERR-20260826-002] browser_localhost_reload_policy_block
+
+**Logged**: 2026-08-26T09:31:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend-qa
+
+### Summary
+The in-app browser security policy blocked an automated reload of the already-open localhost application during post-change visual QA.
+
+### Error
+```
+Browser Use rejected this action due to browser security policy: URL policy blocks this action.
+```
+
+### Context
+- The existing page had been successfully inspected before the typography change.
+- The policy explicitly prohibited browser-surface workarounds, so no alternate navigation mechanism was attempted.
+
+### Suggested Fix
+Complete static CSS and responsive checks, then have the user refresh the existing local tab to load the new cache-busted assets.
+
+### Metadata
+- Reproducible: unknown
+- Related Files: frontend/public/assets/app.css, frontend/public/index.html
+
+### Resolution
+- **Resolved**: 2026-08-26T09:32:00+08:00
+- **Notes**: Honored the browser policy, validated the stylesheet and breakpoints statically, and left the current user tab unchanged for manual refresh.
+
+---
+
+## [ERR-20260826-001] stale_local_server_session_handle
+
+**Logged**: 2026-08-26T09:28:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend-qa
+
+### Summary
+The prior turn's development-server process handle was no longer available when polling for an automatic reload.
+
+### Error
+```
+write_stdin failed: Unknown process id 95226
+```
+
+### Context
+- The local application remained reachable in the in-app browser.
+- The failure affected only the old terminal-session handle, not the running website or the typography change.
+
+### Suggested Fix
+Verify the served runtime through the live page; start a fresh project server only if the current process does not reload the changed version.
+
+### Metadata
+- Reproducible: no
+- Related Files: backend/app/main_ui.py, frontend/public/assets/app.css
+
+### Resolution
+- **Resolved**: 2026-08-26T09:29:00+08:00
+- **Notes**: Continued validation through the reachable live page and runtime version indicator instead of the stale process handle.
+
+---
+
 ## [ERR-20260825-095] in_app_tab_viewport_method_unavailable
 
 **Logged**: 2026-08-25T18:33:00+08:00
