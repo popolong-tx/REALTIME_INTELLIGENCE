@@ -8,7 +8,7 @@
   const MONITOR_INTERVAL_LABELS = { 30: '每 30 分钟', 60: '每 1 小时', 120: '每 2 小时', 240: '每 4 小时', 360: '每 6 小时', 480: '每 8 小时', 720: '每 12 小时', 1440: '每 24 小时' };
   const WIZARD_TITLES = ['目标与范围', '证据快照', '策略与情景', '阶段与门控', '审阅与确认'];
   const NEXT_LABELS = ['继续：证据快照', '继续：策略与情景', '继续：阶段与门控', '继续：审阅确认', '生成模拟计划'];
-  const DEFAULT_BRAND = { name: 'Grok Demo', subtitle: 'REALTIME INTELLIGENCE', mark: 'GD', theme: 'emerald' };
+  const DEFAULT_BRAND = { name: '量化洞察', subtitle: 'QUANT INSIGHT', mark: 'QI', theme: 'emerald' };
   const PAGE_COPY = {
     today: ['决策情报概览', '集中查看实时风险、复杂推理与金融研究状态。'],
     discover: ['发现研究机会', '用主题、条件和已有关注列表建立研究候选池。'],
@@ -2387,7 +2387,7 @@
     root.style.setProperty('--green-deep', palette.deep);
     root.style.setProperty('--green-pale', palette.pale);
     root.style.setProperty('--lime', palette.lime);
-    $('#brand-name').textContent = brand.name === DEFAULT_BRAND.name ? 'Grok Demo' : brand.name.toUpperCase();
+    $('#brand-name').textContent = brand.name || DEFAULT_BRAND.name;
     $('#brand-subtitle').textContent = brand.subtitle.toUpperCase();
     $('#brand-preview-name').textContent = brand.name;
     $('#brand-preview-subtitle').textContent = brand.subtitle.toUpperCase();
@@ -2554,7 +2554,7 @@
     applyBrandConfig(DEFAULT_BRAND);
     writeStorage('nexus-brand', state.brand);
     renderWorkspaceContext();
-    toast('已恢复默认品牌', 'Grok Demo · 研究绿');
+    toast('已恢复默认品牌', '量化洞察 · 研究绿');
   }
 
   function switchSettingsSection(section) {

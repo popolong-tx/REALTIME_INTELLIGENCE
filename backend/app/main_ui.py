@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan events."""
     # Startup
     print("=" * 50)
-    print("Starting Quant Trading Advisor API...")
+    print("Starting 量化洞察系统 API...")
     print(f"Runtime: {UI_RUNTIME_VERSION}")
     print(f"Database: {settings.DATABASE_URL}")
     print(f"Frontend: {FRONTEND_DIR}")
@@ -57,13 +57,13 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     await intelligence_monitoring_service.stop()
-    print("Shutting down Quant Trading Advisor API...")
+    print("Shutting down 量化洞察系统 API...")
 
 
 # Create FastAPI app
 app = FastAPI(
-    title="Quant Trading Advisor API",
-    description="量化交易建议系统 API",
+    title="量化洞察系统 API",
+    description="Quant Insight — 实时决策情报分析平台 API",
     version=UI_RUNTIME_VERSION,
     lifespan=lifespan,
 )

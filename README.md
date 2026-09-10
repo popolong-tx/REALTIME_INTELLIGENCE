@@ -1,6 +1,6 @@
-# 📊 量化交易建议系统 (Quant Trading Advisor)
+# 📊 量化洞察系统 (Quant Insight)
 
-基于人工智能的股票分析和交易建议平台，集成 Grok 实时情报分析。
+基于 AI 的实时决策情报分析平台，集成 Grok 多源检索、项目风险扫描与地缘融资推演。
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
@@ -22,8 +22,8 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/popolong-tx/Grok_Quant_Demo.git
-cd Grok_Quant_Demo
+git clone https://github.com/popolong-tx/REALTIME_INTELLIGENCE.git
+cd REALTIME_INTELLIGENCE
 ```
 
 ### 2. 配置环境变量
@@ -114,7 +114,7 @@ BROKER_LIVE_TRADING_ENABLED=false
 ## 📁 项目结构
 
 ```
-Grok_Quant_Demo/
+REALTIME_INTELLIGENCE/
 ├── backend/                    # Python 后端
 │   ├── app/
 │   │   ├── api/               # API 端点

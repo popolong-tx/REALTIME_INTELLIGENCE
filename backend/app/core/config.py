@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 class Settings(BaseSettings):
     # Application
-    APP_NAME: str = "Quant Trading Advisor"
+    APP_NAME: str = "量化洞察系统"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = True
 
