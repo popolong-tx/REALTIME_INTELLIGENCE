@@ -82,11 +82,14 @@ AUTH_COOKIE_SECURE=false
 ```env
 # OCI Generative AI / xAI Grok
 OCI_GENAI_API_KEY=your_api_key_here
-OCI_REGION=us-ashburn-1
-OCI_GENAI_BASE_URL=https://inference.generativeai.us-ashburn-1.oci.oraclecloud.com/20231130/actions/v1
+OCI_REGION=us-chicago-1
+OCI_GENAI_BASE_URL=https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/v1
 OCI_GROK_MODEL_ID=xai.grok-4.3
 OCI_GROK_MULTI_AGENT_MODEL_ID=xai.grok-4.20-multi-agent
+AVAILABLE_LLM_MODELS=xai.grok-4.3,xai.grok-4.6,xai.grok-4.20-multi-agent
 ```
+
+`AVAILABLE_LLM_MODELS` 控制前端模型下拉框的可选项（逗号分隔）。用户可在运行实时检索、项目风险扫描或地缘推演时手动切换模型；选"默认模型"则使用 `OCI_GROK_MODEL_ID`（实时/风险）或 `OCI_GROK_MULTI_AGENT_MODEL_ID`（地缘推演）。
 
 ### 海外证券 API 配置
 
@@ -256,6 +259,7 @@ pytest tests/test_performance.py
 
 ## 📚 文档
 
+- [架构设计](docs/architecture.md) — 系统架构、模块职责、OCI Grok 情报工作流与安全设计
 - [用户指南](docs/user-guide.md)
 - [合规评估](docs/compliance-assessment.md)
 - [法律评估](docs/legal-assessment.md)

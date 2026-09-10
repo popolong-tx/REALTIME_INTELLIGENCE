@@ -1081,7 +1081,20 @@
     setChip($('#realtime-form-status'), configured ? '多源检索可用' : 'OCI 待配置', configured ? 'healthy' : 'partial');
     setChip($('#project-risk-form-status'), configured ? '实时可用' : '框架预览', configured ? 'healthy' : 'partial');
     setChip($('#geo-form-status'), configured ? '实时可用' : '框架预览', configured ? 'healthy' : 'partial');
+    populateModelSelectors(state.intelligenceCapabilities.available_models || []);
     return state.intelligenceCapabilities;
+  }
+
+  function populateModelSelectors(models) {
+    if (!models.length) return;
+    const options = models.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    ['#intel-model', '#realtime-model', '#project-risk-model', '#geo-model'].forEach((selector) => {
+      const el = $(selector);
+      if (!el) return;
+      const current = el.value;
+      el.innerHTML = '<option value="">默认模型</option>' + options;
+      if (current && models.includes(current)) el.value = current;
+    });
   }
 
   function intelligencePdfContext(workflow) {
@@ -1335,6 +1348,7 @@
       preserve_x_original: $('#realtime-preserve-original').checked,
       max_results: Number($('#realtime-max-results').value),
       workspace_id: state.workspaceId,
+      model_id: $('#realtime-model')?.value || null,
     };
   }
 
@@ -1429,6 +1443,7 @@
       window_days: Number($('#project-window').value),
       monitoring_question: $('#project-question').value.trim() || null,
       workspace_id: state.workspaceId,
+      model_id: $('#project-risk-model')?.value || null,
     };
   }
 
@@ -1695,6 +1710,7 @@
       window_days: Number($('#geo-window').value),
       decision_question: $('#geo-question').value.trim() || null,
       workspace_id: state.workspaceId,
+      model_id: $('#geo-model')?.value || null,
     };
   }
 

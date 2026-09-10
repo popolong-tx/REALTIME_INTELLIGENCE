@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     OCI_GENAI_BASE_URL: Optional[str] = None
     OCI_GROK_MODEL_ID: str = "xai.grok-4.3"
     OCI_GROK_MULTI_AGENT_MODEL_ID: str = "xai.grok-4.20-multi-agent"
+    AVAILABLE_LLM_MODELS: str = "xai.grok-4.3,xai.grok-4.6,xai.grok-4.20-multi-agent"
 
     # Optional embedded font for generated Chinese PDF reports. When omitted,
     # the renderer discovers common system fonts and falls back to STSong.

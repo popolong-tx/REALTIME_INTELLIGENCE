@@ -119,6 +119,11 @@ class InstitutionalIntelligenceService:
                 "realtime": settings.OCI_GROK_MODEL_ID,
                 "reasoning": settings.OCI_GROK_MULTI_AGENT_MODEL_ID,
             },
+            "available_models": [
+                m.strip()
+                for m in settings.AVAILABLE_LLM_MODELS.split(",")
+                if m.strip()
+            ],
             "retrieval": ["x_search", "web_search", "code_interpreter", "provider_citations"],
             "workflows": [
                 {
@@ -170,7 +175,7 @@ class InstitutionalIntelligenceService:
             from_date=from_date,
             to_date=to_date,
             use_code_interpreter=bool(request.get("use_code_interpreter", True)),
-            model_id=settings.OCI_GROK_MODEL_ID,
+            model_id=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
             max_tokens=6500,
             temperature=0.1,
         )
@@ -181,7 +186,7 @@ class InstitutionalIntelligenceService:
         if not self.configured:
             return self._configuration_required(
                 workflow="project-risk",
-                model=settings.OCI_GROK_MODEL_ID,
+                model=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
                 framework=PROJECT_RISK_DIMENSIONS,
                 request=request,
             )
@@ -202,7 +207,7 @@ class InstitutionalIntelligenceService:
             source_channels=["x", "web"],
             from_date=from_date,
             use_code_interpreter=True,
-            model_id=settings.OCI_GROK_MODEL_ID,
+            model_id=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
         )
         result = self._normalize_live_result(
             workflow="project-risk",
@@ -216,7 +221,7 @@ class InstitutionalIntelligenceService:
         if not self.configured:
             return self._configuration_required(
                 workflow="geopolitical-impact",
-                model=settings.OCI_GROK_MULTI_AGENT_MODEL_ID,
+                model=request.get("model_id") or settings.OCI_GROK_MULTI_AGENT_MODEL_ID,
                 framework=GEOPOLITICAL_IMPACT_DIMENSIONS,
                 request=request,
             )
@@ -237,7 +242,7 @@ class InstitutionalIntelligenceService:
             source_channels=["x", "web"],
             from_date=from_date,
             use_code_interpreter=True,
-            model_id=settings.OCI_GROK_MULTI_AGENT_MODEL_ID,
+            model_id=request.get("model_id") or settings.OCI_GROK_MULTI_AGENT_MODEL_ID,
         )
         result = self._normalize_live_result(
             workflow="geopolitical-impact",

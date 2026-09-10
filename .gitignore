@@ -93,3 +93,12 @@ temp/
 
 # Output
 output/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Backend data (SQLite DB, generated reports, etc.)
+backend/data/
+
+# Backend venv
+backend/venv/

@@ -52,6 +52,7 @@ class ProjectRiskRequest(BaseModel):
     window_days: int = Field(default=7, ge=1, le=90)
     monitoring_question: Optional[str] = Field(default=None, max_length=1000)
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
+    model_id: Optional[str] = Field(default=None, max_length=100)
 
 
 class GeopoliticalImpactRequest(BaseModel):
@@ -63,6 +64,7 @@ class GeopoliticalImpactRequest(BaseModel):
     window_days: int = Field(default=30, ge=1, le=90)
     decision_question: Optional[str] = Field(default=None, max_length=1200)
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
+    model_id: Optional[str] = Field(default=None, max_length=100)
 
 
 class RealtimeResearchRequest(BaseModel):
@@ -77,6 +79,7 @@ class RealtimeResearchRequest(BaseModel):
     preserve_x_original: bool = True
     max_results: int = Field(default=30, ge=1, le=50)
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
+    model_id: Optional[str] = Field(default=None, max_length=100)
 
 
 class IntelligenceMonitorCreate(BaseModel):
