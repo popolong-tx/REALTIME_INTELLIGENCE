@@ -1,6 +1,6 @@
-# 📊 量化洞察系统 (Quant Insight)
+# 📊 量化洞察系统 — 实时决策情报分析 (AIIB 专版)
 
-基于 AI 的实时决策情报分析平台，集成 Grok 多源检索、项目风险扫描与地缘融资推演。
+基于 OCI Generative AI + xAI Grok 的多源实时情报分析平台，面向 AIIB（亚洲基础设施投资银行）五类核心场景。
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
@@ -8,80 +8,38 @@
 
 ## ✨ 核心特性
 
-- 🔍 **智能股票搜索** - 支持美股、港股、A股等多市场
-- 🌍 **海外证券 API** - Twelve Data 全球证券搜索、报价与历史行情，服务端密钥配置并保留来源与时效说明
-- 💡 **AI 交易建议** - 基于量化模型的买卖建议
-- 🤖 **Grok 中文情报分析** - 以简体中文呈现实时 X/Web 检索、项目风险与地缘融资推演，并保留可核验的 X 原文
-- 📈 **模型训练管理** - 量化模型训练、回测与版本管理
-- 🔗 **Webhook 集成** - 支持 TradingView 等外部信号
-- 🏦 **券商接入** - 长桥证券 API 集成（模拟模式）
-- 🛡️ **合规治理** - 审计留痕、紧急停用、风险控制
+- 🔍 **实时信息检索** — X Search + Web Search + Code Interpreter 多源检索
+- 🎯 **项目风险情报** — 政治/社会/债务/环境/声誉五维实时风险扫描
+- 🌍 **地缘融资推演** — 基准/压力/机会三情景因果链推理
+- ⚖️ **制裁与负面新闻** — KYC/CDD 合规审查公共信息线索
+- 📈 **市场与资金环境** — 利率/汇率/信用利差/商品价格/融资条件研究
+- 🤖 **研究与数据 Agent** — 连接白名单 SQL、知识库与计算工具生成可核验分析
+- 📄 **PDF 报告导出** — 所有情报结果可导出带引用的审计级 PDF
+- 🔁 **定时监控** — 按间隔重复执行情报任务，自动保存报告
+
+## 🏗️ 架构概览
+
+```
+浏览器 (SPA) → FastAPI → OCI Generative AI Responses API → xAI Grok 模型
+                    ↓
+              SQLite (历史/监控/审计)
+```
+
+Grok 负责全球公开信息研究与工具调用，本地平台负责敏感数据与最终决策。
 
 ## 🚀 快速开始
-
-### 1. 克隆项目
 
 ```bash
 git clone https://github.com/popolong-tx/REALTIME_INTELLIGENCE.git
 cd REALTIME_INTELLIGENCE
-```
-
-### 2. 配置环境变量
-
-```bash
-cd backend
-cp .env.example .env
-# 编辑 .env 文件，配置登录账号、会话密钥和 Grok API Key
-```
-
-### 3. 启动服务
-
-```bash
-# 方式一：使用启动脚本（推荐）
 ./start-ui.sh
-
-# 方式二：手动启动
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements-ui.txt
-python -m uvicorn app.main_ui:app --host 0.0.0.0 --port 8000
+# 访问 http://localhost:8000
 ```
 
-### 4. 访问系统
-
-| 服务 | 地址 |
-|------|------|
-| 🖥️ 前端界面 | http://localhost:8000 |
-| 📚 API 文档 | http://localhost:8000/docs |
-| 💚 健康检查 | http://localhost:8000/health |
-| 📊 系统状态 | http://localhost:8000/api/v1/status |
-
-首次访问会进入登录页；除健康检查和登录接口外，产品页面与业务 API 都需要有效会话。
-
-## ⚙️ 配置说明
-
-### 登录配置
-
-在 `backend/.env` 中配置本地测试账号。含 `#`、空格等特殊字符的密码必须放在双引号内；不要把真实凭据提交到代码仓库。
+### 配置 `.env`
 
 ```env
-APP_LOGIN_USERNAME=admin
-APP_LOGIN_PASSWORD="replace-with-a-strong-password"
-AUTH_SESSION_SECRET=replace-with-a-long-random-secret
-AUTH_SESSION_HOURS=12
-AUTH_COOKIE_SECURE=false
-```
-
-本地 HTTP 测试使用 `AUTH_COOKIE_SECURE=false`；部署到 HTTPS 环境时必须改为 `true`。当前单账号登录用于本地演示，机构生产环境仍需接入 SSO/SCIM、MFA、角色权限、租户隔离和会话撤销。
-
-### Grok API 配置
-
-在 `backend/.env` 中配置：
-
-```env
-# OCI Generative AI / xAI Grok
-OCI_GENAI_API_KEY=your_api_key_here
+OCI_GENAI_API_KEY=your_key
 OCI_REGION=us-chicago-1
 OCI_GENAI_BASE_URL=https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/v1
 OCI_GROK_MODEL_ID=xai.grok-4.3
@@ -89,199 +47,59 @@ OCI_GROK_MULTI_AGENT_MODEL_ID=xai.grok-4.20-multi-agent
 AVAILABLE_LLM_MODELS=xai.grok-4.3,xai.grok-4.6,xai.grok-4.20-multi-agent
 ```
 
-`AVAILABLE_LLM_MODELS` 控制前端模型下拉框的可选项（逗号分隔）。用户可在运行实时检索、项目风险扫描或地缘推演时手动切换模型；选"默认模型"则使用 `OCI_GROK_MODEL_ID`（实时/风险）或 `OCI_GROK_MULTI_AGENT_MODEL_ID`（地缘推演）。
-
-### 海外证券 API 配置
-
-在 `backend/.env` 中配置 Twelve Data。密钥不会进入页面、浏览器存储或 API 响应；未配置时模块显示“待配置”，不会返回静态行情。
-
-```env
-TWELVE_DATA_API_KEY=your_twelve_data_key
-TWELVE_DATA_BASE_URL=https://api.twelvedata.com
-```
-
-实际数据可能是实时、延迟或日终，取决于 Twelve Data 套餐、交易所覆盖和市场数据授权。机构或客户化部署还需确认数据许可与再分发权利。
-
-### 执行模式配置
-
-```env
-# simulation_only: 模拟模式（默认，阻止真实交易）
-# live: 实盘模式（需要额外配置）
-EXECUTION_MODE=simulation_only
-BROKER_LIVE_TRADING_ENABLED=false
-```
-
 ## 📁 项目结构
 
 ```
 REALTIME_INTELLIGENCE/
-├── backend/                    # Python 后端
+├── backend/
 │   ├── app/
-│   │   ├── api/               # API 端点
-│   │   │   ├── broker.py      # 券商接口
-│   │   │   ├── intelligence.py # Grok 情报
-│   │   │   ├── models.py      # 模型管理
-│   │   │   ├── recommendations.py # 交易建议
-│   │   │   ├── webhooks.py    # Webhook
-│   │   │   └── ...
-│   │   ├── core/              # 核心配置
-│   │   ├── models/            # 数据模型
-│   │   └── services/          # 业务逻辑
-│   ├── data/                  # SQLite 数据库
-│   └── tests/                 # 测试
+│   │   ├── api/           # intelligence.py (六类情报端点)
+│   │   ├── core/          # config.py, database, cache, auth
+│   │   ├── models/        # SQLAlchemy ORM
+│   │   └── services/      # OCI 调用、情报编排、PDF、审计
+│   └── data/              # SQLite 数据库
 ├── frontend/
-│   └── public/                # 前端界面
-├── docs/                      # 文档
-├── config/                    # 配置文件
-└── scripts/                   # 部署脚本
+│   └── public/            # index.html + app.js (SPA)
+├── docs/                  # 架构文档、用户指南
+├── config/                # 环境配置
+└── start-ui.sh            # 启动脚本
 ```
 
 ## 🔌 API 端点
 
-### 股票查询
-```bash
-GET /api/v1/stocks/{symbol}/info        # 获取股票信息
-GET /api/v1/stocks/{symbol}/technical   # 技术分析
-GET /api/v1/stocks/{symbol}/news        # 相关新闻
-```
+### 情报分析（AIIB 五类场景 + 实时检索）
 
-### 海外证券数据
-```bash
-GET /api/v1/overseas-securities/providers              # 供应商能力与配置状态
-GET /api/v1/overseas-securities/search?q=SAP           # 搜索全球证券
-GET /api/v1/overseas-securities/AAPL/quote             # 标准化报价
-GET /api/v1/overseas-securities/AAPL/historical?period=1y&interval=1d
-GET /api/v1/overseas-securities/health/provider?probe=true  # 可选真实连接验证
-```
+| 端点 | 场景 | 说明 |
+|------|------|------|
+| `POST /api/v1/intelligence/realtime/search` | 00 实时信息检索 | X + 公共网页多源检索 |
+| `POST /api/v1/intelligence/project-risk/analyze` | 01 项目风险情报 | 五维风险扫描 |
+| `POST /api/v1/intelligence/geopolitical-impact/analyze` | 02 地缘融资推演 | 多情景因果推理 |
+| `POST /api/v1/intelligence/sanctions-news/analyze` | 03 制裁与负面新闻 | KYC/CDD 合规审查 |
+| `POST /api/v1/intelligence/market-funding/analyze` | 04 市场与资金环境 | 利率/汇率/融资条件 |
+| `POST /api/v1/intelligence/research-agent/run` | 05 研究与数据 Agent | 可核验数据分析 |
 
-### 交易建议
-```bash
-POST /api/v1/recommendations/generate   # 生成交易建议
-POST /api/v1/recommendations/generate-plan  # 生成交易计划
-```
-
-### Grok 情报
-```bash
-POST /api/v1/intelligence/realtime/search   # 实时信息检索
-POST /api/v1/intelligence/project-risk/analyze  # 项目风险分析
-POST /api/v1/intelligence/geopolitical-impact/analyze  # 地缘融资推演
-GET  /api/v1/intelligence/history  # 按工作区与类型查看分析历史
-GET  /api/v1/intelligence/history/{id}  # 读取当时保存的完整结果
-GET  /api/v1/intelligence/history/{id}/pdf  # 导出当时结果，不重新查询 Grok
-```
-
-### 模型管理
-```bash
-GET  /api/v1/models/                    # 模型列表
-POST /api/v1/models/                    # 创建模型
-POST /api/v1/models/{id}/fine-tune      # 微调模型
-POST /api/v1/models/{id}/evaluate       # 评估模型
-```
-
-### Webhook
-```bash
-POST /api/v1/webhooks/                  # 创建 Webhook
-POST /api/v1/webhooks/receive/tradingview  # 接收 TradingView 信号
-```
-
-### 券商接口
-```bash
-GET  /api/v1/broker/quote/{symbol}      # 获取报价
-POST /api/v1/broker/order               # 下单（模拟模式会被阻止）
-```
-
-## 🛡️ 安全特性
-
-### 模拟模式保护
-
-系统默认运行在 `simulation_only` 模式，所有真实交易请求会被阻止：
-
-```json
-{
-  "detail": {
-    "code": "simulation_only",
-    "message": "Live broker order mutations are disabled by server policy."
-  }
-}
-```
-
-### 紧急停用
-
-支持紧急停用功能，可立即阻断所有敏感操作：
+### 通用端点
 
 ```bash
-# 触发紧急停用
-POST /api/v1/governance/shutdown/initiate
-
-# 恢复系统
-POST /api/v1/governance/shutdown/recover
-```
-
-### 审计追踪
-
-所有关键操作都会记录到审计日志：
-
-```bash
-GET /api/v1/governance/audit/events     # 查看审计事件
-```
-
-## 📊 系统状态
-
-访问 `/api/v1/status` 查看模块成熟度：
-
-```json
-{
-  "status": "healthy",
-  "modules": {
-    "market_research": {"status": "operational"},
-    "grok_intelligence": {"status": "operational"},
-    "model_training": {"status": "operational"},
-    "broker_execution": {"status": "simulation_only"}
-  }
-}
-```
-
-## 🧪 测试
-
-```bash
-cd backend
-source venv/bin/activate
-
-# 运行单元测试
-pytest tests/
-
-# 运行集成测试
-pytest tests/test_integration.py
-
-# 运行性能测试
-pytest tests/test_performance.py
+GET  /api/v1/intelligence/capabilities    # 能力与可用模型列表
+GET  /api/v1/intelligence/history         # 分析历史
+GET  /api/v1/intelligence/reports         # PDF 报告列表
+POST /api/v1/intelligence/export/pdf      # 导出 PDF
 ```
 
 ## 📚 文档
 
-- [架构设计](docs/architecture.md) — 系统架构、模块职责、OCI Grok 情报工作流与安全设计
+- [架构设计](docs/architecture.md) — 系统架构、模块职责、OCI Grok 情报工作流
 - [用户指南](docs/user-guide.md)
-- [合规评估](docs/compliance-assessment.md)
-- [法律评估](docs/legal-assessment.md)
-- [无障碍测试](docs/accessibility-tests.md)
 
-## 🤝 贡献
+## ⚠️ 当前边界
 
-欢迎提交 Issue 和 Pull Request！
+Grok 当前通过 OCI 仅在美国三地可用（模型部署于 OCI 美国数据中心的 xAI tenancy 并由 xAI 管理）。建议按美国 Grok 服务区规划，并与新加坡/中东本地数据域分层。
 
-## 📄 许可证
-
-本项目采用 [MIT License](LICENSE) 开源协议。
-
-## 🔗 相关链接
-
-- [FastAPI 文档](https://fastapi.tiangolo.com/)
-- [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm)
-- [xAI Grok](https://x.ai/)
-- [长桥证券 API](https://open.longportapp.com/)
+**建议治理流程**：本地敏感数据处理 → 脱敏/聚合 → 美国 Grok 研究 → 引用与事实校验 → 人工复核 → 结果回流
 
 ---
 
 **⚠️ 免责声明**
 
-本系统提供的所有信息仅供参考，不构成任何投资建议。投资有风险，入市需谨慎。在做出任何投资决策之前，请咨询专业的投资顾问。本系统不对任何投资损失承担责任。
+本系统提供的所有信息仅供参考，不构成任何投资建议或合规结论。在做出任何投资、融资或合规决策之前，请咨询专业顾问。

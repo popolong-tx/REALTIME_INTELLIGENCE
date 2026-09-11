@@ -34,6 +34,29 @@ GEOPOLITICAL_IMPACT_DIMENSIONS = [
     {"id": "risk_transfer", "label": "风险转移"},
 ]
 
+SANCTIONS_NEWS_DIMENSIONS = [
+    {"id": "sanctions_lists", "label": "制裁名单"},
+    {"id": "adverse_media", "label": "负面媒体"},
+    {"id": "regulatory_actions", "label": "监管行动"},
+    {"id": "litigation", "label": "诉讼与仲裁"},
+    {"id": "beneficial_ownership", "label": "受益所有权"},
+]
+
+MARKET_FUNDING_DIMENSIONS = [
+    {"id": "interest_rates", "label": "利率环境"},
+    {"id": "exchange_rates", "label": "汇率走势"},
+    {"id": "credit_spreads", "label": "信用利差"},
+    {"id": "commodity_prices", "label": "大宗商品"},
+    {"id": "funding_conditions", "label": "融资条件"},
+]
+
+RESEARCH_AGENT_DIMENSIONS = [
+    {"id": "data_collection", "label": "数据采集"},
+    {"id": "computation", "label": "计算与分析"},
+    {"id": "verification", "label": "事实校验"},
+    {"id": "output", "label": "结构化输出"},
+]
+
 SIMPLIFIED_CHINESE_OUTPUT_RULE = """
 输出语言强制规则：
 1. 除 JSON 键、规定的英文枚举代码、URL、日期、股票代码、模型/工具标识和引用编号外，所有面向用户的文字必须使用简体中文。
@@ -145,6 +168,21 @@ class InstitutionalIntelligenceService:
                     "name": "地缘政治与融资影响推演",
                     "dimensions": GEOPOLITICAL_IMPACT_DIMENSIONS,
                 },
+                {
+                    "id": "sanctions-news",
+                    "name": "制裁与负面新闻补充",
+                    "dimensions": SANCTIONS_NEWS_DIMENSIONS,
+                },
+                {
+                    "id": "market-funding",
+                    "name": "市场与资金环境研究",
+                    "dimensions": MARKET_FUNDING_DIMENSIONS,
+                },
+                {
+                    "id": "research-agent",
+                    "name": "研究与数据 Agent",
+                    "dimensions": RESEARCH_AGENT_DIMENSIONS,
+                },
             ],
             "guardrails": [
                 "实时事实必须进入来源账本",
@@ -249,6 +287,117 @@ class InstitutionalIntelligenceService:
             raw=raw,
             request=request,
             framework=GEOPOLITICAL_IMPACT_DIMENSIONS,
+        )
+        return await self._ensure_simplified_chinese(result)
+
+    # ── AIIB 场景 03：制裁与负面新闻 ────────────────────────────────────
+
+    async def analyze_sanctions_news(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """制裁与负面新闻补充 — 为 KYC/CDD 与合作方审查提供公共信息线索。"""
+        if not self.configured:
+            return self._configuration_required(
+                workflow="sanctions-news",
+                model=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
+                framework=SANCTIONS_NEWS_DIMENSIONS,
+                request=request,
+            )
+
+        window_days = int(request.get("window_days") or 30)
+        from_date = (datetime.now(timezone.utc) - timedelta(days=window_days)).date().isoformat()
+        prompt = self._sanctions_news_prompt(request)
+        raw = await oci_responses_service.generate_realtime_research(
+            prompt=prompt,
+            system_prompt=(
+                "你是多边开发银行合规与尽职调查分析师。必须以事实为依据，严格区分已确认制裁、"
+                "媒体报道、监管行动和未经证实的线索。不得编造制裁名单条目或法律结论；"
+                '不确定的信息必须明确标注为"待核实"。\n\n'
+                + SIMPLIFIED_CHINESE_OUTPUT_RULE
+            ),
+            temperature=0.1,
+            max_tokens=5000,
+            source_channels=["x", "web"],
+            from_date=from_date,
+            use_code_interpreter=False,
+            model_id=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
+        )
+        result = self._normalize_live_result(
+            workflow="sanctions-news",
+            raw=raw,
+            request=request,
+            framework=SANCTIONS_NEWS_DIMENSIONS,
+        )
+        return await self._ensure_simplified_chinese(result)
+
+    # ── AIIB 场景 04：市场与资金环境 ────────────────────────────────────
+
+    async def analyze_market_funding(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
+        if not self.configured:
+            return self._configuration_required(
+                workflow="market-funding",
+                model=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
+                framework=MARKET_FUNDING_DIMENSIONS,
+                request=request,
+            )
+
+        window_days = int(request.get("window_days") or 30)
+        from_date = (datetime.now(timezone.utc) - timedelta(days=window_days)).date().isoformat()
+        prompt = self._market_funding_prompt(request)
+        raw = await oci_responses_service.generate_realtime_research(
+            prompt=prompt,
+            system_prompt=(
+                "你是多边开发银行市场与融资环境分析师。基于公开数据和可靠来源，分析利率、汇率、"
+                "商品价格、信用利差和融资条件的最新变化及其对基础设施融资的影响。"
+                "严格区分市场数据事实、分析师观点和模型推断；不得编造具体数值。\n\n"
+                + SIMPLIFIED_CHINESE_OUTPUT_RULE
+            ),
+            temperature=0.15,
+            max_tokens=5000,
+            source_channels=["x", "web"],
+            from_date=from_date,
+            use_code_interpreter=True,
+            model_id=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
+        )
+        result = self._normalize_live_result(
+            workflow="market-funding",
+            raw=raw,
+            request=request,
+            framework=MARKET_FUNDING_DIMENSIONS,
+        )
+        return await self._ensure_simplified_chinese(result)
+
+    # ── AIIB 场景 05：研究与数据 Agent ────────────────────────────────────
+
+    async def run_research_agent(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """研究与数据 Agent — 连接白名单 SQL、知识库与计算工具生成可核验分析。"""
+        if not self.configured:
+            return self._configuration_required(
+                workflow="research-agent",
+                model=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
+                framework=RESEARCH_AGENT_DIMENSIONS,
+                request=request,
+            )
+
+        prompt = self._research_agent_prompt(request)
+        raw = await oci_responses_service.generate_realtime_research(
+            prompt=prompt,
+            system_prompt=(
+                "你是一名多边开发银行研究与数据分析师。使用代码解释器进行计算、数据处理和可视化，"
+                "确保所有数值结果可复现。严格区分公开数据事实、模型计算结果和分析推断；"
+                "所有计算步骤必须透明可验证。\n\n"
+                + SIMPLIFIED_CHINESE_OUTPUT_RULE
+            ),
+            temperature=0.1,
+            max_tokens=6000,
+            source_channels=request.get("data_sources") or ["web_search", "code_interpreter"],
+            use_code_interpreter=bool(request.get("calculation_required", True)),
+            model_id=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
+        )
+        result = self._normalize_live_result(
+            workflow="research-agent",
+            raw=raw,
+            request=request,
+            framework=RESEARCH_AGENT_DIMENSIONS,
         )
         return await self._ensure_simplified_chinese(result)
 
@@ -374,6 +523,159 @@ class InstitutionalIntelligenceService:
 }}
 
 对于 X 内容，original_text 必须忠实保留引用帖子的原文，不能重建缺失文字；如果原文不是中文，在 content_excerpt 中另写中文说明。公共网页不得把改写内容放入 original_text。代码分析只能用于证据去重、计数或趋势计算，不得制造缺失观察。
+
+{SIMPLIFIED_CHINESE_OUTPUT_RULE}
+""".strip()
+
+    @staticmethod
+    def _sanctions_news_prompt(request: Dict[str, Any]) -> str:
+        focuses = ", ".join(request.get("risk_focus") or ["sanctions", " adverse_media", "litigation"])
+        jurisdictions = ", ".join(request.get("jurisdictions") or [])
+        return f"""
+基于公开信息审查下列实体的制裁、负面新闻与合规风险。
+
+审查对象：{request.get('entity_name')}
+对象类型：{request.get('entity_type')}
+相关司法管辖区：{jurisdictions or '全球'}
+风险维度：{focuses}
+审查窗口：最近 {request.get('window_days', 30)} 天
+补充背景：{request.get('additional_context') or '无'}
+
+使用 X Search 和 Web Search 检索以下信息：
+1. 制裁名单匹配（OFAC SDN、EU、UN、本地制裁）
+2. 负面媒体报道（腐败、欺诈、环境违规、人权问题）
+3. 监管行动（罚款、禁令、调查）
+4. 诉讼与仲裁（公开案件记录）
+5. 受益所有权线索（如有公开信息）
+
+仅返回符合下列结构的 JSON：
+{{
+  "executive_summary": "中文合规风险简报",
+  "overall_risk_level": "low|moderate|high|critical|unrated",
+  "findings": [
+    {{
+      "category": "sanctions|adverse_media|regulatory|litigation|beneficial_ownership",
+      "label": "中文分类名称",
+      "severity": "low|moderate|high|critical",
+      "finding": "中文发现描述",
+      "evidence_status": "verified|reported|unverified",
+      "source_refs": ["来源 URL 或标识"],
+      "recommended_action": "中文建议后续动作"
+    }}
+  ],
+  "sanctions_lists_checked": ["已检查的制裁名单"],
+  "coverage_note": "说明检索覆盖范围和局限性",
+  "unknowns": ["待核实事项"],
+  "warnings": ["重要风险提示"]
+}}
+
+不确定的信息必须标注为"待核实"。不得编造制裁名单条目或法律结论。
+
+{SIMPLIFIED_CHINESE_OUTPUT_RULE}
+""".strip()
+
+    @staticmethod
+    def _market_funding_prompt(request: Dict[str, Any]) -> str:
+        regions = ", ".join(request.get("regions") or [])
+        indicators = ", ".join(request.get("indicators") or [])
+        return f"""
+基于公开数据和可靠来源分析以下市场与融资环境主题。
+
+研究主题：{request.get('topic')}
+关注地区：{regions or '全球'}
+关键指标：{indicators}
+时间窗口：最近 {request.get('window_days', 30)} 天
+分析周期：{request.get('horizon', 'one_month')}
+决策背景：{request.get('decision_context') or '无特定决策背景'}
+
+使用 X Search、Web Search 和 Code Interpreter 分析：
+1. 利率环境（政策利率、国债收益率、贷款利率趋势）
+2. 汇率走势（主要货币对、新兴市场货币、汇率波动性）
+3. 信用利差（投资级 vs 高收益、主权债利差）
+4. 大宗商品价格（能源、金属、农产品价格趋势）
+5. 融资条件（银团贷款市场、债券发行、DFI 融资窗口）
+
+仅返回符合下列结构的 JSON：
+{{
+  "executive_summary": "中文市场环境简报",
+  "key_findings": [
+    {{
+      "indicator": "interest_rate|exchange_rate|credit_spread|commodity|funding_condition",
+      "label": "中文指标名称",
+      "current_assessment": "中文当前状况",
+      "trend": "rising|stable|falling|volatile|unknown",
+      "impact_on_aiib": "对 AIIB 融资活动的中文影响分析",
+      "evidence_refs": ["来源 URL"],
+      "data_points": ["关键数据点"]
+    }}
+  ],
+  "market_outlook": "中文市场展望",
+  "risks_to_watch": ["需关注的风险因素"],
+  "recommendations": ["对融资决策的中文建议"],
+  "coverage_note": "数据来源说明",
+  "unknowns": ["数据缺口或不确定事项"]
+}}
+
+{SIMPLIFIED_CHINESE_OUTPUT_RULE}
+""".strip()
+
+    @staticmethod
+    def _research_agent_prompt(request: Dict[str, Any]) -> str:
+        data_sources = ", ".join(request.get("data_sources") or ["web_search", "code_interpreter"])
+        return f"""
+执行以下研究与数据分析任务，确保所有结果可核验。
+
+研究问题：{request.get('query')}
+可用工具：{data_sources}
+是否需要计算：{'是' if request.get('calculation_required', True) else '否'}
+校验深度：{request.get('verification_level', 'detailed')}
+最大返回条数：{request.get('max_results', 30)}
+
+执行步骤：
+1. 数据采集：通过指定工具获取相关公开数据
+2. 计算分析：使用代码解释器进行数据处理、统计分析或趋势计算
+3. 事实校验：交叉验证关键数据点，标注数据来源
+4. 结构化输出：将分析结果组织为可审计的格式
+
+仅返回符合下列结构的 JSON：
+{{
+  "executive_summary": "中文研究结论简报",
+  "methodology": "分析方法说明",
+  "data_collection": [
+    {{
+      "source": "数据来源名称",
+      "tool_used": "使用的工具",
+      "data_points": ["获取的关键数据"],
+      "coverage": "来源覆盖说明"
+    }}
+  ],
+  "computation_results": [
+    {{
+      "description": "计算内容描述",
+      "method": "计算方法",
+      "result": "计算结果",
+      "reproducible": true,
+      "code_snippet": "可复现的代码片段（如有）"
+    }}
+  ],
+  "verification": {{
+    "cross_references": ["交叉验证来源"],
+    "confidence_level": "high|moderate|low",
+    "data_quality_notes": ["数据质量说明"]
+  }},
+  "findings": [
+    {{
+      "finding": "中文研究发现",
+      "evidence_status": "data_backed|model_inferred|unverified",
+      "source_refs": ["来源引用"]
+    }}
+  ],
+  "assumptions": ["分析假设"],
+  "unknowns": ["数据缺口或待深入研究事项"],
+  "limitations": ["分析局限性说明"]
+}}
+
+所有计算步骤必须透明可验证。不得编造数据或统计结果。
 
 {SIMPLIFIED_CHINESE_OUTPUT_RULE}
 """.strip()

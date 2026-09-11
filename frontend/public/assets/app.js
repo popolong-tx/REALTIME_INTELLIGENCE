@@ -308,12 +308,15 @@
     if (view === 'lab') loadModels();
     if (view === 'settings') { loadProfile(); loadGovernance(); loadPlatformManifest(); }
     if (view === 'portfolio') renderPlans();
-    if (view === 'realtime-research' || view === 'project-risk' || view === 'geopolitics') loadIntelligenceCapabilities();
+    if (view === 'realtime-research' || view === 'project-risk' || view === 'geopolitics' || view === 'sanctions-news' || view === 'market-funding' || view === 'research-agent') loadIntelligenceCapabilities();
     if (view === 'realtime-research') loadIntelligenceMonitors('realtime_research');
     if (view === 'project-risk') loadIntelligenceMonitors('project_risk');
     if (view === 'realtime-research') loadIntelligenceHistory('realtime-research');
     if (view === 'project-risk') loadIntelligenceHistory('project-risk');
     if (view === 'geopolitics') loadIntelligenceHistory('geopolitical-impact');
+    if (view === 'sanctions-news') loadIntelligenceHistory('sanctions-news');
+    if (view === 'market-funding') loadIntelligenceHistory('market-funding');
+    if (view === 'research-agent') loadIntelligenceHistory('research-agent');
   }
 
   function openSidebar() {
@@ -1002,10 +1005,28 @@
     'realtime-research': { list: '#realtime-history-list', count: '#realtime-history-count', label: '实时信息检索', render: renderRealtimeResearchResult },
     'project-risk': { list: '#project-history-list', count: '#project-history-count', label: '项目风险情报', render: renderProjectRiskResult },
     'geopolitical-impact': { list: '#geo-history-list', count: '#geo-history-count', label: '地缘融资推演', render: renderGeopoliticalResult },
+    'sanctions-news': { list: '#sanctions-history-list', count: '#sanctions-history-count', label: '制裁与负面新闻', render: renderSanctionsResult },
+    'market-funding': { list: '#market-history-list', count: '#market-history-count', label: '市场与资金环境', render: renderMarketResult },
+    'research-agent': { list: '#agent-history-list', count: '#agent-history-count', label: '研究与数据 Agent', render: renderAgentResult },
   };
 
   function splitList(value) {
     return String(value || '').split(/[,，;；\n]/).map((item) => item.trim()).filter(Boolean);
+  }
+
+  function renderSourceList(selector, evidence) {
+    const container = $(selector);
+    if (!container) return;
+    if (!evidence || !evidence.length) {
+      container.innerHTML = '<div class="empty-state small"><strong>暂无来源</strong><span>完成后显示可访问链接与证据状态。</span></div>';
+      return;
+    }
+    container.innerHTML = evidence.map((item) => {
+      const link = safeUrl(item.url);
+      const title = escapeHtml(item.title || item.source || '来源');
+      const text = escapeHtml(item.text || item.excerpt || item.content || '');
+      return `<div class="source-item"><div><strong>${title}</strong><p>${text}</p></div>${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">打开来源 ↗</a>` : ''}</div>`;
+    }).join('');
   }
 
   function riskLevelMeta(level, score) {
@@ -1776,6 +1797,173 @@
       button.disabled = false;
       button.innerHTML = '<svg><use href="#i-globe"/></svg>运行多情景推演';
     }
+  }
+
+  // ── AIIB 场景 03：制裁与负面新闻 ──────────────────────────────────────
+
+  function sanctionsPayload() {
+    return {
+      entity_name: $('#sanctions-entity').value.trim(),
+      entity_type: $('#sanctions-entity-type').value,
+      jurisdictions: splitList($('#sanctions-jurisdictions').value),
+      risk_focus: $$('input[name="sanctions-risk"]:checked').map((input) => input.value),
+      window_days: Number($('#sanctions-window').value),
+      additional_context: $('#sanctions-context').value.trim() || null,
+      model_id: $('#sanctions-model')?.value || null,
+      workspace_id: state.workspaceId,
+    };
+  }
+
+  async function runSanctionsNews(event) {
+    event?.preventDefault();
+    const payload = sanctionsPayload();
+    if (!payload.entity_name) { toast('请填写审查对象名称', '例如公司名称或个人姓名', 'error'); return; }
+    const button = $('#run-sanctions');
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner small"></span>运行合规审查';
+    addJob('制裁与负面新闻审查', `${payload.entity_type} · ${payload.window_days} 天`);
+    try {
+      const result = await api('/api/v1/intelligence/sanctions-news/analyze', { method: 'POST', body: JSON.stringify(payload), timeout: 120000 });
+      state.sanctionsNews = result;
+      renderSanctionsResult(result);
+      if (result.history_record?.id) loadIntelligenceHistory('sanctions-news');
+      const complete = ['live', 'partial'].includes(result.status);
+      toast(complete ? '合规审查完成' : 'OCI Grok 尚未配置', complete ? `${result.evidence?.length || 0} 条来源` : '已展示审查框架', complete ? 'success' : 'error');
+    } catch (error) {
+      setChip($('#sanctions-status'), '审查失败', 'error');
+      toast('制裁与负面新闻审查失败', error.message, 'error');
+    } finally {
+      completeLatestJob();
+      button.disabled = false;
+      button.innerHTML = '<svg><use href="#i-shield"/></svg>运行合规审查';
+    }
+  }
+
+  function renderSanctionsResult(result) {
+    const audit = result?.audit || {};
+    const evidence = result?.evidence || [];
+    const analysis = result?.analysis || {};
+    setChip($('#sanctions-status'), result?.status === 'live' ? '已完成' : '部分结果', result?.status === 'live' ? 'healthy' : 'partial');
+    $('#sanctions-asof').textContent = `AS OF ${timestamp(new Date(audit.generated_at || Date.now()))}`;
+    const summary = analysis.executive_summary || result?.output_text || '模型未返回综述文本。';
+    $('#sanctions-summary').innerHTML = `<div class="synthesis-copy"><p>${escapeHtml(summary)}</p><div class="synthesis-meta"><span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>GENERATED ${escapeHtml(timestamp(new Date(audit.generated_at || Date.now())))}</span></div></div>`;
+    $('#sanctions-audit').innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>REQUEST ${escapeHtml(String(audit.request_id || '—').slice(0, 12))}</span>`;
+    const findings = analysis.findings || [];
+    if (findings.length) {
+      $('#sanctions-findings').innerHTML = findings.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.category || '发现')}</strong><p>${escapeHtml(f.finding || '')}</p><small>${escapeHtml(f.evidence_status || '')} · ${escapeHtml((f.source_refs || []).join(', ') || '无来源')}</small></div>`).join('');
+    }
+    renderSourceList('#sanctions-sources', evidence);
+  }
+
+  // ── AIIB 场景 04：市场与资金环境 ──────────────────────────────────────
+
+  function marketPayload() {
+    return {
+      topic: $('#market-topic').value.trim(),
+      regions: splitList($('#market-regions').value),
+      indicators: $$('input[name="market-indicator"]:checked').map((input) => input.value),
+      horizon: $('#market-horizon').value,
+      window_days: Number($('#market-window').value),
+      decision_context: $('#market-context').value.trim() || null,
+      model_id: $('#market-model')?.value || null,
+      workspace_id: state.workspaceId,
+    };
+  }
+
+  async function runMarketFunding(event) {
+    event?.preventDefault();
+    const payload = marketPayload();
+    if (!payload.topic) { toast('请填写研究主题', '例如利率环境或汇率走势', 'error'); return; }
+    const button = $('#run-market');
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner small"></span>运行市场分析';
+    addJob('市场与资金环境分析', `${payload.horizon} · ${payload.window_days} 天`);
+    try {
+      const result = await api('/api/v1/intelligence/market-funding/analyze', { method: 'POST', body: JSON.stringify(payload), timeout: 120000 });
+      state.marketFunding = result;
+      renderMarketResult(result);
+      if (result.history_record?.id) loadIntelligenceHistory('market-funding');
+      const complete = ['live', 'partial'].includes(result.status);
+      toast(complete ? '市场分析完成' : 'OCI Grok 尚未配置', complete ? `${result.evidence?.length || 0} 条来源` : '已展示分析框架', complete ? 'success' : 'error');
+    } catch (error) {
+      setChip($('#market-status'), '分析失败', 'error');
+      toast('市场与资金环境分析失败', error.message, 'error');
+    } finally {
+      completeLatestJob();
+      button.disabled = false;
+      button.innerHTML = '<svg><use href="#i-chart"/></svg>运行市场分析';
+    }
+  }
+
+  function renderMarketResult(result) {
+    const audit = result?.audit || {};
+    const evidence = result?.evidence || [];
+    const analysis = result?.analysis || {};
+    setChip($('#market-status'), result?.status === 'live' ? '已完成' : '部分结果', result?.status === 'live' ? 'healthy' : 'partial');
+    $('#market-asof').textContent = `AS OF ${timestamp(new Date(audit.generated_at || Date.now()))}`;
+    const summary = analysis.executive_summary || result?.output_text || '模型未返回综述文本。';
+    $('#market-summary').innerHTML = `<div class="synthesis-copy"><p>${escapeHtml(summary)}</p><div class="synthesis-meta"><span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>GENERATED ${escapeHtml(timestamp(new Date(audit.generated_at || Date.now())))}</span></div></div>`;
+    $('#market-audit').innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>REQUEST ${escapeHtml(String(audit.request_id || '—').slice(0, 12))}</span>`;
+    const indicators = analysis.key_findings || [];
+    if (indicators.length) {
+      $('#market-indicators').innerHTML = indicators.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.indicator || '指标')}</strong><p>${escapeHtml(f.current_assessment || '')}</p><small>趋势: ${escapeHtml(f.trend || '—')} · 影响: ${escapeHtml(f.impact_on_aiib || '—')}</small></div>`).join('');
+    }
+    renderSourceList('#market-sources', evidence);
+  }
+
+  // ── AIIB 场景 05：研究与数据 Agent ──────────────────────────────────────
+
+  function agentPayload() {
+    return {
+      query: $('#agent-query').value.trim(),
+      data_sources: $$('input[name="agent-tool"]:checked').map((input) => input.value),
+      calculation_required: $('#agent-calculation').checked,
+      verification_level: $('#agent-verification').value,
+      max_results: Number($('#agent-max').value),
+      model_id: $('#agent-model')?.value || null,
+      workspace_id: state.workspaceId,
+    };
+  }
+
+  async function runResearchAgent(event) {
+    event?.preventDefault();
+    const payload = agentPayload();
+    if (!payload.query) { toast('请填写研究问题', '例如分析投资趋势或计算增长率', 'error'); return; }
+    const button = $('#run-agent');
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner small"></span>运行研究 Agent';
+    addJob('研究与数据 Agent', `${payload.verification_level} 校验 · ${payload.data_sources.join(' + ')}`);
+    try {
+      const result = await api('/api/v1/intelligence/research-agent/run', { method: 'POST', body: JSON.stringify(payload), timeout: 120000 });
+      state.researchAgent = result;
+      renderAgentResult(result);
+      if (result.history_record?.id) loadIntelligenceHistory('research-agent');
+      const complete = ['live', 'partial'].includes(result.status);
+      toast(complete ? '研究 Agent 完成' : 'OCI Grok 尚未配置', complete ? `${result.evidence?.length || 0} 条来源` : '已展示研究框架', complete ? 'success' : 'error');
+    } catch (error) {
+      setChip($('#agent-status'), '执行失败', 'error');
+      toast('研究与数据 Agent 执行失败', error.message, 'error');
+    } finally {
+      completeLatestJob();
+      button.disabled = false;
+      button.innerHTML = '<svg><use href="#i-lab"/></svg>运行研究 Agent';
+    }
+  }
+
+  function renderAgentResult(result) {
+    const audit = result?.audit || {};
+    const evidence = result?.evidence || [];
+    const analysis = result?.analysis || {};
+    setChip($('#agent-status'), result?.status === 'live' ? '已完成' : '部分结果', result?.status === 'live' ? 'healthy' : 'partial');
+    $('#agent-asof').textContent = `AS OF ${timestamp(new Date(audit.generated_at || Date.now()))}`;
+    const summary = analysis.executive_summary || result?.output_text || '模型未返回综述文本。';
+    $('#agent-summary').innerHTML = `<div class="synthesis-copy"><p>${escapeHtml(summary)}</p><div class="synthesis-meta"><span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>GENERATED ${escapeHtml(timestamp(new Date(audit.generated_at || Date.now())))}</span></div></div>`;
+    $('#agent-audit').innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>REQUEST ${escapeHtml(String(audit.request_id || '—').slice(0, 12))}</span>`;
+    const computation = analysis.computation_results || [];
+    if (computation.length) {
+      $('#agent-computation').innerHTML = computation.map((c) => `<div class="synthesis-copy"><strong>${escapeHtml(c.description || '计算')}</strong><p>方法: ${escapeHtml(c.method || '—')}</p><p>结果: ${escapeHtml(String(c.result || '—'))}</p><small>可复现: ${c.reproducible ? '是' : '否'}</small></div>`).join('');
+    }
+    renderSourceList('#agent-sources', evidence);
   }
 
   const ALERT_CONDITIONS = {
@@ -2695,9 +2883,15 @@
     $('#project-risk-form').addEventListener('submit', runProjectRisk);
     $('#save-project-monitor').addEventListener('click', () => createIntelligenceMonitor('project_risk'));
     $('#geo-form').addEventListener('submit', runGeopoliticalAnalysis);
+    $('#sanctions-form').addEventListener('submit', runSanctionsNews);
+    $('#market-form').addEventListener('submit', runMarketFunding);
+    $('#agent-form').addEventListener('submit', runResearchAgent);
     $('#export-realtime-pdf').addEventListener('click', () => downloadIntelligencePdf('realtime-research'));
     $('#export-project-risk-pdf').addEventListener('click', () => downloadIntelligencePdf('project-risk'));
     $('#export-geo-pdf').addEventListener('click', () => downloadIntelligencePdf('geopolitical-impact'));
+    $('#export-sanctions-pdf').addEventListener('click', () => downloadIntelligencePdf('sanctions-news'));
+    $('#export-market-pdf').addEventListener('click', () => downloadIntelligencePdf('market-funding'));
+    $('#export-agent-pdf').addEventListener('click', () => downloadIntelligencePdf('research-agent'));
     $('#close-wizard').addEventListener('click', closeWizard);
     $('#wizard-next').addEventListener('click', nextWizardStep);
     $('#wizard-back').addEventListener('click', previousWizardStep);

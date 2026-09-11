@@ -7,8 +7,7 @@ from datetime import datetime, timezone
 import logging
 import os
 
-from app.api import auth, stocks, search, models, recommendations, user, governance, platform, intelligence, overseas_securities
-from app.api import broker, webhooks
+from app.api import auth, platform, intelligence
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.session_auth import SessionAuthenticationMiddleware
@@ -92,17 +91,8 @@ app.mount(
 
 # Include routers
 app.include_router(auth.router)
-app.include_router(stocks.router)
-app.include_router(search.router)
-app.include_router(models.router)
-app.include_router(recommendations.router)
-app.include_router(user.router)
-app.include_router(governance.router)
 app.include_router(platform.router)
 app.include_router(intelligence.router)
-app.include_router(overseas_securities.router)
-app.include_router(broker.router)
-app.include_router(webhooks.router)
 
 
 @app.get("/login")

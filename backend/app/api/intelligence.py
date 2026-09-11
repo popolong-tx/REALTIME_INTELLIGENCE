@@ -100,12 +100,56 @@ class IntelligenceMonitorUpdate(BaseModel):
 
 
 class IntelligencePdfExportRequest(BaseModel):
-    workflow: Literal["realtime-research", "project-risk", "geopolitical-impact"]
+    workflow: Literal["realtime-research", "project-risk", "geopolitical-impact", "sanctions-news", "market-funding", "research-agent"]
     result: Dict[str, Any]
     query_context: Dict[str, Any] = Field(default_factory=dict)
 
 
-HistoryWorkflow = Literal["realtime-research", "project-risk", "geopolitical-impact"]
+HistoryWorkflow = Literal["realtime-research", "project-risk", "geopolitical-impact", "sanctions-news", "market-funding", "research-agent"]
+
+
+# ── AIIB 五类场景：制裁与负面新闻 ──────────────────────────────────────
+class SanctionsNewsRequest(BaseModel):
+    """制裁与负面新闻补充 — 为 KYC/CDD 与合作方审查提供公共信息线索。"""
+    entity_name: str = Field(min_length=2, max_length=200, description="审查对象名称（公司/个人/项目）")
+    entity_type: Literal["company", "individual", "project", "government"] = "company"
+    jurisdictions: List[str] = Field(default_factory=list, max_length=10, description="相关司法管辖区")
+    risk_focus: List[Literal["sanctions", " adverse_media", "litigation", "regulatory", "beneficial_ownership"]] = Field(
+        default_factory=lambda: ["sanctions", " adverse_media", "litigation"]
+    )
+    window_days: int = Field(default=30, ge=1, le=90)
+    additional_context: Optional[str] = Field(default=None, max_length=1000)
+    model_id: Optional[str] = Field(default=None, max_length=100)
+    workspace_id: str = Field(default="personal", min_length=1, max_length=80)
+
+
+# ── AIIB 五类场景：市场与资金环境 ──────────────────────────────────────
+class MarketFundingRequest(BaseModel):
+    """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
+    topic: str = Field(min_length=4, max_length=1200, description="研究主题（如：东南亚基建融资环境、美元利率走势）")
+    regions: List[str] = Field(default_factory=list, max_length=12)
+    indicators: List[Literal["interest_rate", "exchange_rate", "commodity", "credit_spread", "bond_yield", "funding_condition"]] = Field(
+        default_factory=lambda: ["interest_rate", "exchange_rate", "funding_condition"]
+    )
+    horizon: Literal["one_week", "one_month", "one_quarter", "one_year"] = "one_month"
+    window_days: int = Field(default=30, ge=1, le=90)
+    decision_context: Optional[str] = Field(default=None, max_length=1200)
+    model_id: Optional[str] = Field(default=None, max_length=100)
+    workspace_id: str = Field(default="personal", min_length=1, max_length=80)
+
+
+# ── AIIB 五类场景：研究与数据 Agent ──────────────────────────────────────
+class ResearchAgentRequest(BaseModel):
+    """研究与数据 Agent — 连接白名单 SQL、知识库与计算工具生成可核验分析。"""
+    query: str = Field(min_length=4, max_length=2000, description="研究问题或分析需求")
+    data_sources: List[Literal["web_search", "x_search", "code_interpreter", "knowledge_base"]] = Field(
+        default_factory=lambda: ["web_search", "code_interpreter"]
+    )
+    calculation_required: bool = True
+    verification_level: Literal["basic", "detailed", "exhaustive"] = "detailed"
+    max_results: int = Field(default=30, ge=1, le=50)
+    model_id: Optional[str] = Field(default=None, max_length=100)
+    workspace_id: str = Field(default="personal", min_length=1, max_length=80)
 
 
 def _validated_monitor_payload(
@@ -479,6 +523,69 @@ async def analyze_geopolitical_impact(
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"地缘融资推演失败：{exc}") from exc
+
+
+# ── AIIB 五类场景：制裁与负面新闻 ──────────────────────────────────────
+@router.post("/sanctions-news/analyze")
+async def analyze_sanctions_news(
+    request: SanctionsNewsRequest,
+    db: Session = Depends(get_db),
+):
+    """制裁与负面新闻补充 — KYC/CDD 审查公共信息线索。"""
+    try:
+        result = await institutional_intelligence_service.analyze_sanctions_news(
+            request.model_dump(mode="json")
+        )
+        return await _save_analysis_history(
+            db,
+            workflow="sanctions-news",
+            query_context=request.model_dump(mode="json"),
+            result=result,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"制裁与负面新闻分析失败：{exc}") from exc
+
+
+# ── AIIB 五类场景：市场与资金环境 ──────────────────────────────────────
+@router.post("/market-funding/analyze")
+async def analyze_market_funding(
+    request: MarketFundingRequest,
+    db: Session = Depends(get_db),
+):
+    """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
+    try:
+        result = await institutional_intelligence_service.analyze_market_funding(
+            request.model_dump(mode="json")
+        )
+        return await _save_analysis_history(
+            db,
+            workflow="market-funding",
+            query_context=request.model_dump(mode="json"),
+            result=result,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"市场与资金环境分析失败：{exc}") from exc
+
+
+# ── AIIB 五类场景：研究与数据 Agent ──────────────────────────────────────
+@router.post("/research-agent/run")
+async def run_research_agent(
+    request: ResearchAgentRequest,
+    db: Session = Depends(get_db),
+):
+    """研究与数据 Agent — 连接白名单 SQL、知识库与计算工具生成可核验分析。"""
+    try:
+        result = await institutional_intelligence_service.run_research_agent(
+            request.model_dump(mode="json")
+        )
+        return await _save_analysis_history(
+            db,
+            workflow="research-agent",
+            query_context=request.model_dump(mode="json"),
+            result=result,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"研究与数据 Agent 执行失败：{exc}") from exc
 
 
 @router.post("/export/pdf")
