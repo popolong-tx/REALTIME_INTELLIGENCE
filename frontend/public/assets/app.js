@@ -59,6 +59,8 @@
     platformManifest: null,
     intelligenceCapabilities: null,
     realtimeResearch: null,
+    materialSessionId: '',
+    materials: [],
     realtimeFilter: 'all',
     projectRisk: null,
     geopoliticalImpact: null,
@@ -151,7 +153,8 @@
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), options.timeout || 45000);
     try {
-      const headers = { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) };
+      const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+      const headers = { ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) };
       const response = await fetch(`${API_BASE}${path}`, { ...options, headers, signal: controller.signal });
       if (response.status === 401 && !path.startsWith('/api/v1/auth/')) {
         const next = `${window.location.pathname}${window.location.search}`;
@@ -171,6 +174,72 @@
       throw error;
     } finally {
       clearTimeout(timeout);
+    }
+  }
+
+  function renderMaterials() {
+    const container = $('#material-list');
+    const analyze = $('#analyze-materials');
+    if (!container) return;
+    if (!state.materials.length) {
+      container.innerHTML = '<div class="empty-state small"><strong>尚未添加资料</strong><span>上传后将在当前资料集内联合分析。</span></div>';
+      if (analyze) analyze.disabled = true;
+      return;
+    }
+    container.innerHTML = state.materials.map((item) => `<div class="material-row"><span class="material-type">${escapeHtml((item.content_type || 'file').split('/').pop().toUpperCase())}</span><div><strong>${escapeHtml(item.filename)}</strong><small>${formatNumber(item.byte_size)} bytes · ${escapeHtml(item.extraction_status)}${item.text_characters ? ` · ${formatNumber(item.text_characters)} 字` : ''}</small></div><span class="status-chip ${item.extraction_status === 'extraction_failed' ? 'partial' : 'healthy'}">${item.extraction_status === 'image_ready' ? '截图就绪' : item.extraction_status === 'ready' ? '已解析' : '需复核'}</span></div>`).join('');
+    if (analyze) analyze.disabled = false;
+  }
+
+  async function ensureMaterialSession() {
+    if (state.materialSessionId) return state.materialSessionId;
+    const result = await api(`/api/v1/intelligence/materials/sessions?workspace_id=${encodeURIComponent(state.workspaceId)}`, { method: 'POST' });
+    state.materialSessionId = result.session_id;
+    return state.materialSessionId;
+  }
+
+  async function uploadMaterials(files) {
+    if (!files?.length) return;
+    const sessionId = await ensureMaterialSession();
+    const picker = $('#material-upload');
+    if (picker) picker.disabled = true;
+    try {
+      for (const file of Array.from(files)) {
+        const body = new FormData();
+        body.append('file', file);
+        await api(`/api/v1/intelligence/materials/sessions/${encodeURIComponent(sessionId)}/upload?workspace_id=${encodeURIComponent(state.workspaceId)}`, { method: 'POST', body, timeout: 90000 });
+      }
+      const data = await api(`/api/v1/intelligence/materials/sessions/${encodeURIComponent(sessionId)}?workspace_id=${encodeURIComponent(state.workspaceId)}`);
+      state.materials = data.items || [];
+      renderMaterials();
+      toast('资料已加入当前资料集', `${state.materials.length} 份资料保持会话隔离`);
+    } catch (error) {
+      toast('资料上传失败', error.message, 'error');
+    } finally {
+      if (picker) { picker.disabled = false; picker.value = ''; }
+    }
+  }
+
+  async function analyzeMaterials() {
+    const question = $('#material-question')?.value.trim();
+    if (!state.materialSessionId || !state.materials.length || !question) {
+      toast('请补充联合分析问题', '先上传资料并填写要比较或核查的问题', 'error');
+      return;
+    }
+    if (!$('#material-consent')?.checked) {
+      toast('需要确认资料处理授权', '联合分析会将当前资料集发送至已配置的 OCI/Grok', 'error');
+      return;
+    }
+    const button = $('#analyze-materials');
+    if (button) { button.disabled = true; button.innerHTML = '<span class="spinner"></span>联合分析中'; }
+    try {
+      const result = await api(`/api/v1/intelligence/materials/sessions/${encodeURIComponent(state.materialSessionId)}/analyze?workspace_id=${encodeURIComponent(state.workspaceId)}`, { method: 'POST', body: JSON.stringify({ question, external_processing_consent: true, model_id: $('#realtime-model')?.value || null }), timeout: 120000 });
+      state.realtimeResearch = result;
+      renderRealtimeResearchResult(result);
+      toast('联合分析完成', '结果仅基于当前资料集，并已标注会话范围');
+    } catch (error) {
+      toast('联合分析失败', error.message, 'error');
+    } finally {
+      if (button) { button.disabled = false; button.innerHTML = '<svg><use href="#i-lab"/></svg>联合分析当前资料集'; }
     }
   }
 
@@ -2205,39 +2274,9 @@
   }
 
   async function loadPlans() {
-    try {
-      let result = await api(`/api/v1/recommendations/plans?workspace_id=${encodeURIComponent(state.workspaceId)}`);
-      const legacyPlans = readStorage('nexus-plans', []);
-      const migrationComplete = readStorage('nexus-plans-migrated', null);
-      if (!migrationComplete && Array.isArray(legacyPlans) && legacyPlans.length) {
-        let imported = 0;
-        for (const legacy of legacyPlans) {
-          const userPlan = legacy.userPlan || {};
-          if (!userPlan.symbol) continue;
-          const migrated = await api('/api/v1/recommendations/plans/import', {
-            method: 'POST',
-            body: JSON.stringify({
-              workspace_id: state.workspaceId,
-              symbol: userPlan.symbol,
-              evidence_status: legacy.evidenceStatus || 'partial',
-              user_plan: userPlan,
-              generated_plan: legacy.generatedPlan || {},
-            }),
-          });
-          if (!migrated.plan?.id) throw new Error('旧计划迁移后未返回持久化记录');
-          imported += 1;
-        }
-        result = await api(`/api/v1/recommendations/plans?workspace_id=${encodeURIComponent(state.workspaceId)}`);
-        writeStorage('nexus-plans-migrated', { imported, verifiedAt: new Date().toISOString() });
-        toast('本地计划已迁移', '旧数据作为只读备份保留，后续计划由服务端管理');
-      }
-      state.plans = Array.isArray(result.plans) ? result.plans : [];
-      renderPlans();
-    } catch (error) {
-      state.plans = [];
-      renderPlans();
-      toast('计划库加载失败', error.message, 'error');
-    }
+    // Plans API removed in intelligence-only build
+    state.plans = [];
+    renderPlans();
   }
 
   function renderPlans() {
@@ -2882,6 +2921,24 @@
     $('#refresh-technical')?.addEventListener('click', async () => { if (!state.symbol) return; $('#technical-content').innerHTML = '<div class="loading-state"><span class="spinner"></span>更新技术指标</div>'; try { state.technical = await api(`/api/v1/stocks/${encodeURIComponent(state.symbol)}/technical?period=1y`); renderTechnical(state.technical); } catch (error) { renderTechnical(null); } });
     $('#run-grok')?.addEventListener('click', () => runGrok());
     $('#realtime-research-form')?.addEventListener('submit', runRealtimeResearch);
+    $('#material-upload')?.addEventListener('change', (event) => uploadMaterials(event.target.files));
+    $('#analyze-materials')?.addEventListener('click', analyzeMaterials);
+    $('#new-material-session')?.addEventListener('click', () => {
+      state.materialSessionId = '';
+      state.materials = [];
+      renderMaterials();
+      $('#material-question').value = '';
+      $('#material-consent').checked = false;
+      toast('已新建资料集', '后续上传的文件不会与之前的资料混合');
+    });
+    $$('.query-template').forEach((button) => button.addEventListener('click', () => {
+      const query = $('#realtime-query');
+      if (!query) return;
+      query.value = button.dataset.queryTemplate || '';
+      query.focus();
+      const status = $('#realtime-form-status');
+      if (status) setChip(status, '已载入模板', 'healthy');
+    }));
     $('#save-realtime-monitor')?.addEventListener('click', () => createIntelligenceMonitor('realtime_research'));
     $('#realtime-item-filters')?.addEventListener('click', (event) => { const button = event.target.closest('[data-realtime-filter]'); if (!button) return; state.realtimeFilter = button.dataset.realtimeFilter; $$('[data-realtime-filter]').forEach((item) => item.classList.toggle('active', item === button)); renderRealtimeItems(); });
     $('#project-risk-form')?.addEventListener('submit', runProjectRisk);
