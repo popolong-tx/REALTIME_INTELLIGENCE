@@ -91,11 +91,11 @@ def intelligence_pdf_sample(workflow):
         "geopolitical-impact": {
             "executive_summary": "区域融资竞争可能改变联合融资伙伴结构和项目排序。",
             "direct_assessment": "最容易被低估的是合作伙伴退出后的风险转移。",
-            "transmission_paths": [{"driver": "政策调整", "mechanism": "资本成本变化", "financing_effect": "联合融资比例下降", "affected_parties": ["成员国", "融资伙伴"], "evidence_status": "sourced"}],
+            "transmission_paths": [{"driver": "政策调整", "mechanism": "资本成本变化", "financing_effect": "联合融资比例下降", "affected_parties": ["国家/地区", "融资伙伴"], "evidence_status": "sourced"}],
             "scenarios": [{"name": "baseline", "probability": "medium", "pipeline_impact": "保持审慎推进", "cofinancing_impact": "伙伴结构调整", "borrowing_appetite": "基本稳定", "feasibility": "需复核", "risk_transfer": "部分转移至担保方", "early_signals": ["伙伴公开表态"]}],
             "decision_options": [{"action": "调整联合融资组合", "upside": "降低单一伙伴依赖", "downside": "谈判周期延长", "owner": "战略团队", "timing": "本季度", "trigger": "伙伴条款发生变化"}],
             "assumptions": ["现有政策延续"],
-            "unknowns": ["成员国正式借贷意愿"],
+            "unknowns": ["国家/地区正式借贷意愿"],
         },
     }
     return {
@@ -244,7 +244,7 @@ class OperationalHardeningTests(unittest.TestCase):
             "2026-08-25",
         )
         project_prompt = institutional_intelligence_service._project_risk_prompt({
-            "country": "示例成员国",
+            "country": "示例国家/地区",
             "project_name": "清洁能源项目",
             "product_type": "主权贷款",
             "window_days": 7,
@@ -303,7 +303,7 @@ class OperationalHardeningTests(unittest.TestCase):
     def test_intelligence_pdf_export_is_real_and_governed(self):
         contexts = {
             "realtime-research": {"query": "区域项目政策", "keywords": ["项目", "政策"], "workspace_id": "test-workspace"},
-            "project-risk": {"country": "示例成员国", "project_name": "清洁能源项目", "window_days": 7, "workspace_id": "test-workspace"},
+            "project-risk": {"country": "示例国家/地区", "project_name": "清洁能源项目", "window_days": 7, "workspace_id": "test-workspace"},
             "geopolitical-impact": {"issue": "区域融资政策变化", "regions": ["东南亚"], "horizon": "one_year", "workspace_id": "test-workspace"},
         }
         for workflow, context in contexts.items():
@@ -487,7 +487,7 @@ class OperationalHardeningTests(unittest.TestCase):
                 "/api/v1/intelligence/project-risk/analyze",
                 "analyze_project_risk",
                 {
-                    "country": "示例成员国",
+                    "country": "示例国家/地区",
                     "project_name": "清洁能源项目",
                     "product_type": "sovereign_loan",
                     "risk_focus": ["political", "social"],
@@ -502,7 +502,7 @@ class OperationalHardeningTests(unittest.TestCase):
                 {
                     "issue": "区域基础设施融资政策变化",
                     "regions": ["东南亚"],
-                    "actors": ["多边开发银行"],
+                    "actors": ["金融机构"],
                     "product_types": ["联合融资"],
                     "horizon": "one_year",
                     "window_days": 30,

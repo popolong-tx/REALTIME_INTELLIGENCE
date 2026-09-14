@@ -160,7 +160,7 @@ class InstitutionalIntelligenceService:
                 },
                 {
                     "id": "project-risk",
-                    "name": "成员国与项目实时风险情报",
+                    "name": "国家/地区与项目实时风险情报",
                     "dimensions": PROJECT_RISK_DIMENSIONS,
                 },
                 {
@@ -270,7 +270,7 @@ class InstitutionalIntelligenceService:
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
-                "你是多边开发银行高级战略分析团队。使用明确的因果链和竞争性假设，直接呈现权衡"
+                "你是金融机构高级战略分析团队。使用明确的因果链和竞争性假设，直接呈现权衡"
                 "以及可能的二阶影响。将有来源的观察与模型推断分开，明确写出假设；"
                 "不得编造确定性、共识或引用。\n\n"
                 + SIMPLIFIED_CHINESE_OUTPUT_RULE
@@ -290,7 +290,7 @@ class InstitutionalIntelligenceService:
         )
         return await self._ensure_simplified_chinese(result)
 
-    # ── 投资平台 场景 03：制裁与负面新闻 ────────────────────────────────────
+    # ── 场景 03：制裁与负面新闻 ────────────────────────────────────
 
     async def analyze_sanctions_news(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """制裁与负面新闻补充 — 为 KYC/CDD 与合作方审查提供公共信息线索。"""
@@ -308,7 +308,7 @@ class InstitutionalIntelligenceService:
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
-                "你是多边开发银行合规与尽职调查分析师。必须以事实为依据，严格区分已确认制裁、"
+                "你是金融机构合规与尽职调查分析师。必须以事实为依据，严格区分已确认制裁、"
                 "媒体报道、监管行动和未经证实的线索。不得编造制裁名单条目或法律结论；"
                 '不确定的信息必须明确标注为"待核实"。\n\n'
                 + SIMPLIFIED_CHINESE_OUTPUT_RULE
@@ -328,7 +328,7 @@ class InstitutionalIntelligenceService:
         )
         return await self._ensure_simplified_chinese(result)
 
-    # ── 投资平台 场景 04：市场与资金环境 ────────────────────────────────────
+    # ── 场景 04：市场与资金环境 ────────────────────────────────────
 
     async def analyze_market_funding(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
@@ -346,7 +346,7 @@ class InstitutionalIntelligenceService:
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
-                "你是多边开发银行市场与融资环境分析师。基于公开数据和可靠来源，分析利率、汇率、"
+                "你是金融机构市场与融资环境分析师。基于公开数据和可靠来源，分析利率、汇率、"
                 "商品价格、信用利差和融资条件的最新变化及其对基础设施融资的影响。"
                 "严格区分市场数据事实、分析师观点和模型推断；不得编造具体数值。\n\n"
                 + SIMPLIFIED_CHINESE_OUTPUT_RULE
@@ -366,7 +366,7 @@ class InstitutionalIntelligenceService:
         )
         return await self._ensure_simplified_chinese(result)
 
-    # ── 投资平台 场景 05：研究与数据 Agent ────────────────────────────────────
+    # ── 场景 05：研究与数据 Agent ────────────────────────────────────
 
     async def run_research_agent(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """研究与数据 Agent — 连接白名单 SQL、知识库与计算工具生成可核验分析。"""
@@ -382,7 +382,7 @@ class InstitutionalIntelligenceService:
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
-                "你是一名多边开发银行研究与数据分析师。使用代码解释器进行计算、数据处理和可视化，"
+                "你是一名金融机构研究与数据分析师。使用代码解释器进行计算、数据处理和可视化，"
                 "确保所有数值结果可复现。严格区分公开数据事实、模型计算结果和分析推断；"
                 "所有计算步骤必须透明可验证。\n\n"
                 + SIMPLIFIED_CHINESE_OUTPUT_RULE
@@ -446,7 +446,7 @@ class InstitutionalIntelligenceService:
 分析地缘政治变化如何影响多边开发融资。
 
 议题/事件：{request.get('issue')}
-地区/成员国：{regions or '不限定'}
+地区/国家/地区：{regions or '不限定'}
 跟踪对象：{actors or '相关政府、官员、智库、媒体和融资合作伙伴'}
 金融产品：{products or '主权贷款、非主权融资、担保和联合融资'}
 决策周期：{request.get('horizon')}

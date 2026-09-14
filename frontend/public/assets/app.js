@@ -1501,7 +1501,7 @@
   async function runProjectRisk(event) {
     event?.preventDefault();
     const payload = projectRiskPayload();
-    if (!payload.country || !payload.project_name) { toast('请填写成员国和项目名称', '两项信息用于限定实时检索范围', 'error'); return; }
+    if (!payload.country || !payload.project_name) { toast('请填写国家/地区和项目名称', '两项信息用于限定实时检索范围', 'error'); return; }
     if (!payload.risk_focus.length) { toast('至少选择一个风险维度', '', 'error'); return; }
     const button = $('#run-project-risk');
     button.disabled = true;
@@ -1539,7 +1539,7 @@
   function monitorListMeta(type) {
     return type === 'realtime_research'
       ? { list: $('#realtime-monitor-list'), count: $('#realtime-monitor-count'), scheduler: $('#realtime-scheduler-status'), empty: '尚无实时信息监控', hint: '填写主题并选择间隔后，可由服务端按计划重复检索。' }
-      : { list: $('#project-monitor-list'), count: $('#project-monitor-count'), scheduler: $('#project-scheduler-status'), empty: '尚无项目风险监控', hint: '填写成员国和项目后，可由服务端按计划重复扫描。' };
+      : { list: $('#project-monitor-list'), count: $('#project-monitor-count'), scheduler: $('#project-scheduler-status'), empty: '尚无项目风险监控', hint: '填写国家/地区和项目后，可由服务端按计划重复扫描。' };
   }
 
   function monitorIntervalOptions(selected) {
@@ -1603,7 +1603,7 @@
     if (realtime && !payload.query) { toast('请输入检索主题', '保存监控前需要定义查询对象', 'error'); return; }
     if (realtime && !payload.source_channels.length) { toast('至少选择一个信息通道', '', 'error'); return; }
     if (realtime && payload.date_from && payload.date_to && payload.date_from > payload.date_to) { toast('日期范围不正确', '开始日期不能晚于结束日期', 'error'); return; }
-    if (!realtime && (!payload.country || !payload.project_name)) { toast('请先填写监测对象', '需要成员国和项目名称', 'error'); return; }
+    if (!realtime && (!payload.country || !payload.project_name)) { toast('请先填写监测对象', '需要国家/地区和项目名称', 'error'); return; }
     if (!realtime && !payload.risk_focus.length) { toast('至少选择一个风险维度', '', 'error'); return; }
     const intervalSelector = realtime ? $('#realtime-monitor-interval') : $('#project-monitor-interval');
     const button = realtime ? $('#save-realtime-monitor') : $('#save-project-monitor');
@@ -1799,7 +1799,7 @@
     }
   }
 
-  // ── 投资平台 场景 03：制裁与负面新闻 ──────────────────────────────────────
+  // ── 场景 03：制裁与负面新闻 ──────────────────────────────────────
 
   function sanctionsPayload() {
     return {
@@ -1855,7 +1855,7 @@
     renderSourceList('#sanctions-sources', evidence);
   }
 
-  // ── 投资平台 场景 04：市场与资金环境 ──────────────────────────────────────
+  // ── 场景 04：市场与资金环境 ──────────────────────────────────────
 
   function marketPayload() {
     return {
@@ -1911,7 +1911,7 @@
     renderSourceList('#market-sources', evidence);
   }
 
-  // ── 投资平台 场景 05：研究与数据 Agent ──────────────────────────────────────
+  // ── 场景 05：研究与数据 Agent ──────────────────────────────────────
 
   function agentPayload() {
     return {
@@ -2779,7 +2779,7 @@
     if (q) {
       const pages = [
         { view: 'realtime-research', label: '实时信息检索', detail: '分开获取 X 原文与公共开放信息', keywords: '实时 信息 X 原文 公共 网页 新闻 搜索 GROK WEB SEARCH X SEARCH' },
-        { view: 'project-risk', label: '项目风险情报', detail: '成员国、项目和金融产品的实时风险监测', keywords: '项目 风险 成员国 舆情 政治 社会 债务 环境 声誉 GROK PROJECT RISK' },
+        { view: 'project-risk', label: '项目风险情报', detail: '国家/地区、项目和金融产品的实时风险监测', keywords: '项目 风险 国家/地区 舆情 政治 社会 债务 环境 声誉 GROK PROJECT RISK' },
         { view: 'geopolitics', label: '地缘融资推演', detail: '地缘政治对管道、联合融资和借贷意愿的影响', keywords: '地缘 政策 区域 融资 联合融资 一带一路 中美 GEO FINANCING GROK' },
         { view: 'discover', label: '发现与候选池', detail: '筛选、保存候选并进入研究', keywords: '发现 筛选 候选 DISCOVER' },
         { view: 'plans', label: '模拟计划', detail: '创建或复核分阶段计划', keywords: '计划 模拟 PLAN' },
@@ -2794,7 +2794,7 @@
       result.innerHTML = `<p>搜索结果</p>${symbolResult}${pageResults}${planResults || (!symbolResult && !pageResults ? '<div class="command-empty">没有匹配页面或计划；股票代码请包含正确市场后缀。</div>' : '')}`;
       return;
     }
-    result.innerHTML = '<p>快速前往</p><button data-command-view="realtime-research"><svg><use href="#i-search"/></svg><span><strong>实时信息检索</strong><small>X 原文、公共网页、趋势与来源账本</small></span><kbd>↵</kbd></button><button data-command-view="project-risk"><svg><use href="#i-radar"/></svg><span><strong>项目风险情报</strong><small>成员国、项目与金融产品实时监测</small></span></button><button data-command-view="geopolitics"><svg><use href="#i-globe"/></svg><span><strong>地缘融资推演</strong><small>复杂政策与区域竞争情景分析</small></span></button><button data-command-view="research"><svg><use href="#i-search"/></svg><span><strong>证券研究</strong><small>输入代码打开完整工作台</small></span></button><button data-command-view="settings"><svg><use href="#i-settings"/></svg><span><strong>平台管理</strong><small>工作区、客户化、连接器与权限</small></span></button>';
+    result.innerHTML = '<p>快速前往</p><button data-command-view="realtime-research"><svg><use href="#i-search"/></svg><span><strong>实时信息检索</strong><small>X 原文、公共网页、趋势与来源账本</small></span><kbd>↵</kbd></button><button data-command-view="project-risk"><svg><use href="#i-radar"/></svg><span><strong>项目风险情报</strong><small>国家/地区、项目与金融产品实时监测</small></span></button><button data-command-view="geopolitics"><svg><use href="#i-globe"/></svg><span><strong>地缘融资推演</strong><small>复杂政策与区域竞争情景分析</small></span></button><button data-command-view="research"><svg><use href="#i-search"/></svg><span><strong>证券研究</strong><small>输入代码打开完整工作台</small></span></button><button data-command-view="settings"><svg><use href="#i-settings"/></svg><span><strong>平台管理</strong><small>工作区、客户化、连接器与权限</small></span></button>';
   }
 
   function bindEvents() {
