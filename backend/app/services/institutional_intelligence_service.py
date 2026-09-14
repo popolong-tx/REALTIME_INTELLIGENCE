@@ -379,7 +379,16 @@ class InstitutionalIntelligenceService:
             )
 
         prompt = self._research_agent_prompt(request)
-        raw = await oci_responses_service.generate_realtime_research(
+        # Build tools list from data_sources
+        data_sources = request.get("data_sources") or ["web_search", "code_interpreter"]
+        tools: list[dict] = []
+        if "web_search" in data_sources:
+            tools.append({"type": "web_search"})
+        if "x_search" in data_sources:
+            tools.append({"type": "x_search"})
+        if "code_interpreter" in data_sources or request.get("calculation_required", True):
+            tools.append({"type": "code_interpreter"})
+        raw = await oci_responses_service.generate_text(
             prompt=prompt,
             system_prompt=(
                 "你是一名金融机构研究与数据分析师。使用代码解释器进行计算、数据处理和可视化，"
@@ -389,8 +398,7 @@ class InstitutionalIntelligenceService:
             ),
             temperature=0.1,
             max_tokens=6000,
-            source_channels=request.get("data_sources") or ["web_search", "code_interpreter"],
-            use_code_interpreter=bool(request.get("calculation_required", True)),
+            tools=tools or None,
             model_id=request.get("model_id") or settings.OCI_GROK_MODEL_ID,
         )
         result = self._normalize_live_result(

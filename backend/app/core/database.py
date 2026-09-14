@@ -76,8 +76,6 @@ def init_db() -> None:
     """Initialize database tables."""
     import app.models.intelligence_monitoring  # noqa: F401
     import app.models.platform_operations  # noqa: F401
-    import app.models.training  # noqa: F401
-    import app.models.user_config  # noqa: F401
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables created successfully")
 

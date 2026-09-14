@@ -64,6 +64,21 @@ class IntelligencePdfService:
             "subtitle": "融资影响传导、情景推演与策略选择",
             "prefix": "geopolitical-financing",
         },
+        "sanctions-news": {
+            "title": "制裁与负面新闻审查报告",
+            "subtitle": "KYC/CDD 合规审查公共信息线索",
+            "prefix": "sanctions-news",
+        },
+        "market-funding": {
+            "title": "市场与资金环境分析报告",
+            "subtitle": "利率、汇率、信用利差、商品价格与融资条件",
+            "prefix": "market-funding",
+        },
+        "research-agent": {
+            "title": "研究与数据 Agent 分析报告",
+            "subtitle": "可核验数据分析与计算结果",
+            "prefix": "research-agent",
+        },
     }
 
     SCOPE_LABELS = {
@@ -317,7 +332,7 @@ class IntelligencePdfService:
         elif workflow == "project-risk":
             story.extend(self._project_risk_sections(result))
         else:
-            story.extend(self._geopolitical_sections(result))
+            story.extend(self._generic_sections(result))
         story.extend(self._evidence_and_audit(result, exported_at))
 
         doc.build(
@@ -488,6 +503,52 @@ class IntelligencePdfService:
         ))
         story.extend(self._simple_list("持续观察", "后续观察项", analysis.get("watch_items") or []))
         story.extend(self._simple_list("分析假设", "关键假设", analysis.get("assumptions") or []))
+        return story
+
+    def _generic_sections(self, result: Dict[str, Any]) -> List[Any]:
+        """Generic PDF sections for any intelligence workflow."""
+        analysis = result.get("analysis") or {}
+        story: List[Any] = []
+        story.extend(self._summary_block(
+            "分析结论",
+            "综述",
+            analysis.get("executive_summary") or result.get("output_text"),
+            analysis.get("direct_assessment") or analysis.get("market_outlook") or analysis.get("methodology") or "本次分析结论请参阅完整报告。",
+            self.BLUE,
+        ))
+        # Findings / Key findings / Computation results
+        findings = analysis.get("findings") or analysis.get("key_findings") or analysis.get("computation_results") or []
+        if findings:
+            story.extend(self._section_title("分析发现", "关键发现"))
+            story.append(self._data_table(
+                ["类别", "内容", "证据状态"],
+                [[
+                    f.get("category") or f.get("label") or f.get("indicator") or f.get("description", ""),
+                    f.get("finding") or f.get("current_assessment") or f.get("result", ""),
+                    self._token(f.get("evidence_status") or f.get("severity") or "pending"),
+                ] for f in findings[:MAX_SECTION_ITEMS]],
+                [40 * mm, 100 * mm, 28 * mm],
+                empty="本次没有形成结构化发现。",
+            ))
+        # Risks / Warnings
+        risks = analysis.get("risks_to_watch") or analysis.get("warnings") or analysis.get("unknowns") or []
+        if risks:
+            story.extend(self._simple_list("风险与未知项", "风险提示", risks))
+        # Recommendations
+        recs = analysis.get("recommendations") or analysis.get("decision_options") or []
+        if recs:
+            if isinstance(recs[0], dict):
+                story.extend(self._section_title("建议", "后续建议"))
+                story.append(self._data_table(
+                    ["建议", "说明"],
+                    [[r.get("action") or r.get("recommendation", ""), r.get("rationale") or r.get("trigger", "")] for r in recs[:MAX_SECTION_ITEMS]],
+                    [50 * mm, 118 * mm],
+                    empty="本次没有形成具体建议。",
+                ))
+            else:
+                story.extend(self._simple_list("建议", "后续建议", recs))
+        # Assumptions
+        story.extend(self._simple_list("分析假设", "假设", analysis.get("assumptions") or []))
         return story
 
     def _geopolitical_sections(self, result: Dict[str, Any]) -> List[Any]:

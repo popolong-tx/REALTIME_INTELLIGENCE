@@ -15,6 +15,9 @@ SUPPORTED_HISTORY_WORKFLOWS = (
     "realtime-research",
     "project-risk",
     "geopolitical-impact",
+    "sanctions-news",
+    "market-funding",
+    "research-agent",
 )
 EXPORTABLE_STATUSES = {"live", "partial"}
 MAX_RECORD_BYTES = 2_000_000
