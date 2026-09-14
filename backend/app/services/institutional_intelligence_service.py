@@ -290,7 +290,7 @@ class InstitutionalIntelligenceService:
         )
         return await self._ensure_simplified_chinese(result)
 
-    # ── AIIB 场景 03：制裁与负面新闻 ────────────────────────────────────
+    # ── 投资平台 场景 03：制裁与负面新闻 ────────────────────────────────────
 
     async def analyze_sanctions_news(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """制裁与负面新闻补充 — 为 KYC/CDD 与合作方审查提供公共信息线索。"""
@@ -328,7 +328,7 @@ class InstitutionalIntelligenceService:
         )
         return await self._ensure_simplified_chinese(result)
 
-    # ── AIIB 场景 04：市场与资金环境 ────────────────────────────────────
+    # ── 投资平台 场景 04：市场与资金环境 ────────────────────────────────────
 
     async def analyze_market_funding(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
@@ -366,7 +366,7 @@ class InstitutionalIntelligenceService:
         )
         return await self._ensure_simplified_chinese(result)
 
-    # ── AIIB 场景 05：研究与数据 Agent ────────────────────────────────────
+    # ── 投资平台 场景 05：研究与数据 Agent ────────────────────────────────────
 
     async def run_research_agent(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """研究与数据 Agent — 连接白名单 SQL、知识库与计算工具生成可核验分析。"""
@@ -604,7 +604,7 @@ class InstitutionalIntelligenceService:
       "label": "中文指标名称",
       "current_assessment": "中文当前状况",
       "trend": "rising|stable|falling|volatile|unknown",
-      "impact_on_aiib": "对 AIIB 融资活动的中文影响分析",
+      "impact_on_投资平台": "对 投资平台 融资活动的中文影响分析",
       "evidence_refs": ["来源 URL"],
       "data_points": ["关键数据点"]
     }}

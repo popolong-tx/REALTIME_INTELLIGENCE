@@ -1,6 +1,6 @@
 # 📊 实时决策情报分析系统
 
-基于 OCI Generative AI + xAI Grok 的多源实时情报分析平台，面向 AIIB（亚洲基础设施投资银行）五类核心场景。
+基于 OCI Generative AI + xAI Grok 的多源实时情报分析平台，面向 投资平台（亚洲基础设施投资银行）五类核心场景。
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
@@ -67,7 +67,7 @@ REALTIME_INTELLIGENCE/
 
 ## 🔌 API 端点
 
-### 情报分析（AIIB 五类场景 + 实时检索）
+### 情报分析（投资平台 五类场景 + 实时检索）
 
 | 端点 | 场景 | 说明 |
 |------|------|------|

@@ -1799,7 +1799,7 @@
     }
   }
 
-  // ── AIIB 场景 03：制裁与负面新闻 ──────────────────────────────────────
+  // ── 投资平台 场景 03：制裁与负面新闻 ──────────────────────────────────────
 
   function sanctionsPayload() {
     return {
@@ -1855,7 +1855,7 @@
     renderSourceList('#sanctions-sources', evidence);
   }
 
-  // ── AIIB 场景 04：市场与资金环境 ──────────────────────────────────────
+  // ── 投资平台 场景 04：市场与资金环境 ──────────────────────────────────────
 
   function marketPayload() {
     return {
@@ -1906,12 +1906,12 @@
     $('#market-audit').innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>REQUEST ${escapeHtml(String(audit.request_id || '—').slice(0, 12))}</span>`;
     const indicators = analysis.key_findings || [];
     if (indicators.length) {
-      $('#market-indicators').innerHTML = indicators.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.indicator || '指标')}</strong><p>${escapeHtml(f.current_assessment || '')}</p><small>趋势: ${escapeHtml(f.trend || '—')} · 影响: ${escapeHtml(f.impact_on_aiib || '—')}</small></div>`).join('');
+      $('#market-indicators').innerHTML = indicators.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.indicator || '指标')}</strong><p>${escapeHtml(f.current_assessment || '')}</p><small>趋势: ${escapeHtml(f.trend || '—')} · 影响: ${escapeHtml(f.impact_on_投资平台 || '—')}</small></div>`).join('');
     }
     renderSourceList('#market-sources', evidence);
   }
 
-  // ── AIIB 场景 05：研究与数据 Agent ──────────────────────────────────────
+  // ── 投资平台 场景 05：研究与数据 Agent ──────────────────────────────────────
 
   function agentPayload() {
     return {

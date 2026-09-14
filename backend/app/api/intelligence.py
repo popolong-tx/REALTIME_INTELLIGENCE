@@ -108,7 +108,7 @@ class IntelligencePdfExportRequest(BaseModel):
 HistoryWorkflow = Literal["realtime-research", "project-risk", "geopolitical-impact", "sanctions-news", "market-funding", "research-agent"]
 
 
-# ── AIIB 五类场景：制裁与负面新闻 ──────────────────────────────────────
+# ── 投资平台 五类场景：制裁与负面新闻 ──────────────────────────────────────
 class SanctionsNewsRequest(BaseModel):
     """制裁与负面新闻补充 — 为 KYC/CDD 与合作方审查提供公共信息线索。"""
     entity_name: str = Field(min_length=2, max_length=200, description="审查对象名称（公司/个人/项目）")
@@ -123,7 +123,7 @@ class SanctionsNewsRequest(BaseModel):
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
 
 
-# ── AIIB 五类场景：市场与资金环境 ──────────────────────────────────────
+# ── 投资平台 五类场景：市场与资金环境 ──────────────────────────────────────
 class MarketFundingRequest(BaseModel):
     """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
     topic: str = Field(min_length=4, max_length=1200, description="研究主题（如：东南亚基建融资环境、美元利率走势）")
@@ -138,7 +138,7 @@ class MarketFundingRequest(BaseModel):
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
 
 
-# ── AIIB 五类场景：研究与数据 Agent ──────────────────────────────────────
+# ── 投资平台 五类场景：研究与数据 Agent ──────────────────────────────────────
 class ResearchAgentRequest(BaseModel):
     """研究与数据 Agent — 连接白名单 SQL、知识库与计算工具生成可核验分析。"""
     query: str = Field(min_length=4, max_length=2000, description="研究问题或分析需求")
@@ -525,7 +525,7 @@ async def analyze_geopolitical_impact(
         raise HTTPException(status_code=502, detail=f"地缘融资推演失败：{exc}") from exc
 
 
-# ── AIIB 五类场景：制裁与负面新闻 ──────────────────────────────────────
+# ── 投资平台 五类场景：制裁与负面新闻 ──────────────────────────────────────
 @router.post("/sanctions-news/analyze")
 async def analyze_sanctions_news(
     request: SanctionsNewsRequest,
@@ -546,7 +546,7 @@ async def analyze_sanctions_news(
         raise HTTPException(status_code=502, detail=f"制裁与负面新闻分析失败：{exc}") from exc
 
 
-# ── AIIB 五类场景：市场与资金环境 ──────────────────────────────────────
+# ── 投资平台 五类场景：市场与资金环境 ──────────────────────────────────────
 @router.post("/market-funding/analyze")
 async def analyze_market_funding(
     request: MarketFundingRequest,
@@ -567,7 +567,7 @@ async def analyze_market_funding(
         raise HTTPException(status_code=502, detail=f"市场与资金环境分析失败：{exc}") from exc
 
 
-# ── AIIB 五类场景：研究与数据 Agent ──────────────────────────────────────
+# ── 投资平台 五类场景：研究与数据 Agent ──────────────────────────────────────
 @router.post("/research-agent/run")
 async def run_research_agent(
     request: ResearchAgentRequest,

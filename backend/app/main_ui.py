@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="实时决策情报分析系统 API",
-    description="Realtime Intelligence — AIIB 实时决策情报分析平台 API",
+    description="Realtime Intelligence — 投资平台 实时决策情报分析平台 API",
     version=UI_RUNTIME_VERSION,
     lifespan=lifespan,
 )
