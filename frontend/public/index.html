@@ -44,7 +44,7 @@
       </div>
       <nav class="side-nav">
         <p class="nav-kicker">情报分析</p>
-        <button class="nav-item active" data-view="today"><svg><use href="#i-home"/></svg><span>今日</span></button>
+        <button class="nav-item active" data-view="today"><svg><use href="#i-home"/></svg><span>决策情报概览</span></button>
         <p class="nav-kicker">五类场景</p>
         <button class="nav-item" data-view="realtime-research"><svg><use href="#i-search"/></svg><span>实时信息检索</span><em class="nav-live">X + WEB</em></button>
         <button class="nav-item" data-view="project-risk"><svg><use href="#i-radar"/></svg><span>项目风险情报</span><em class="nav-live">LIVE</em></button>
@@ -82,7 +82,7 @@
       </header>
 
       <main id="main-content" tabindex="-1">
-        <section class="view active" id="view-today" data-title="今日">
+        <section class="view active" id="view-today" data-title="决策情报概览">
           <div class="page-heading"><div><p class="eyebrow" id="today-date">TODAY</p><h1>先看地面信号，再决定如何行动。</h1><p>实时风险、复杂推理与金融研究集中在一个决策面板。</p></div><button class="button primary" data-view-target="realtime-research"><svg><use href="#i-search"/></svg>检索 X 与公共信息</button></div>
           <div class="status-strip" aria-label="数据状态"><div><span class="health-dot" id="status-api-dot"></span><strong>行情与接口</strong><small id="status-api">检查中</small></div><div><span class="health-dot partial" id="grok-status-dot"></span><strong>Grok 实时情报</strong><small id="grok-status-detail">按需查询 · OCI</small></div><div><span class="health-dot healthy"></span><strong>风险门控</strong><small>计划生成前强制校验</small></div><button class="text-button" data-view-target="settings">查看数据健康度 <svg><use href="#i-arrow"/></svg></button></div>
           <article class="panel grok-mission-card operating-flow-card">
@@ -94,9 +94,6 @@
               <button data-view-target="geopolitics"><span class="mission-index">04</span><div><strong>持续监控</strong><small>触发器、情景与复盘</small></div><svg><use href="#i-arrow"/></svg></button>
             </div>
           </article>
-          <div class="dashboard-grid">
-            <article class="panel grok-mission-card"><div class="grok-mission-copy"><div><p class="section-kicker">GROK DECISION INTELLIGENCE</p><h2>五类场景 — 全球公开信息研究与工具调用</h2><p>把 X 与公开渠道的最新地面信号，转化为带引用、可审计、可直接进入人工决策的结构化判断。</p></div><span class="status-chip partial" id="today-intelligence-status">检查 OCI 配置</span></div><div class="grok-mission-actions"><button data-view-target="realtime-research"><span class="mission-index">00</span><div><strong>X + 公共信息检索</strong><small>原文 · 网页 · 趋势 · 来源账本</small></div><svg><use href="#i-arrow"/></svg></button><button data-view-target="project-risk"><span class="mission-index">01</span><div><strong>国家/地区与项目风险</strong><small>政治 · 社会 · 债务 · 环境 · 声誉</small></div><svg><use href="#i-arrow"/></svg></button><button data-view-target="geopolitics"><span class="mission-index">02</span><div><strong>地缘政治与融资影响</strong><small>管道 · 联合融资 · 借贷意愿 · 风险转移</small></div><svg><use href="#i-arrow"/></svg></button><button data-view-target="sanctions-news"><span class="mission-index">03</span><div><strong>制裁与负面新闻</strong><small>KYC/CDD · 合规审查 · 受益所有权</small></div><svg><use href="#i-arrow"/></svg></button><button data-view-target="market-funding"><span class="mission-index">04</span><div><strong>市场与资金环境</strong><small>利率 · 汇率 · 信用利差 · 融资条件</small></div><svg><use href="#i-arrow"/></svg></button><button data-view-target="research-agent"><span class="mission-index">05</span><div><strong>研究与数据 Agent</strong><small>SQL · 知识库 · 计算工具 · 可核验</small></div><svg><use href="#i-arrow"/></svg></button></div></article>
-          </div>
         </section>
 
         <section class="view" id="view-realtime-research" data-title="实时信息检索">
