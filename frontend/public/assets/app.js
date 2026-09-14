@@ -575,12 +575,14 @@
   function renderScreener() {
     const rows = state.screenerTab === 'saved' ? state.savedCandidates : state.screenerResults;
     const body = $('#screener-body');
-    $('#candidate-count').textContent = rows.length;
+    const countEl = $('#candidate-count');
+    if (countEl) countEl.textContent = rows.length;
     $$('[data-screener-tab]').forEach((button) => button.classList.toggle('active', button.dataset.screenerTab === state.screenerTab));
     if (!rows.length) {
-      body.innerHTML = `<tr><td colspan="6"><div class="empty-state small"><strong>${state.screenerTab === 'saved' ? '候选池为空' : '运行筛选以加载候选'}</strong><span>${state.screenerTab === 'saved' ? '从本次筛选结果中保存值得进一步研究的标的。' : '筛选只构建研究入口，不会直接生成交易信号。'}</span></div></td></tr>`;
+      if (body) body.innerHTML = `<tr><td colspan="6"><div class="empty-state small"><strong>${state.screenerTab === 'saved' ? '候选池为空' : '运行筛选以加载候选'}</strong><span>${state.screenerTab === 'saved' ? '从本次筛选结果中保存值得进一步研究的标的。' : '筛选只构建研究入口，不会直接生成交易信号。'}</span></div></td></tr>`;
       return;
     }
+    if (!body) return;
     body.innerHTML = rows.map((row) => {
       const change = asNumber(row.change);
       const ok = !row.error && asNumber(row.price) !== null;
@@ -2242,19 +2244,17 @@
     const count = state.plans.length;
     const frozenCount = state.plans.filter((plan) => plan.status === 'frozen').length;
     const reviewCount = state.plans.filter((plan) => plan.status !== 'frozen').length;
-    $('#plan-count').textContent = count;
-    $('#portfolio-plan-count').textContent = count;
-    $('#portfolio-trigger-count').textContent = reviewCount;
-    $('#portfolio-frozen-count').textContent = frozenCount;
+    const pc = $('#plan-count'); if (pc) pc.textContent = count;
+    const ppc = $('#portfolio-plan-count'); if (ppc) ppc.textContent = count;
+    const ptc = $('#portfolio-trigger-count'); if (ptc) ptc.textContent = reviewCount;
+    const pfc = $('#portfolio-frozen-count'); if (pfc) pfc.textContent = frozenCount;
     if (!count) {
-      $('#plan-library').innerHTML = '<div class="empty-state large"><div class="empty-icon"><svg><use href="#i-plan"/></svg></div><strong>还没有模拟计划</strong><span>从证券工作台开始，或直接使用五步向导定义目标、证据和风险边界。</span><button class="button primary" data-action="start-plan">开始五步向导</button></div>';
-      $('#today-plan-list').className = 'empty-compact';
-      $('#today-plan-list').innerHTML = '<span>尚无模拟计划</span><small>完成证券研究后，可将证据快照带入五步向导。</small>';
-      $('#portfolio-ledger').className = 'empty-state large';
-      $('#portfolio-ledger').innerHTML = '<div class="empty-icon"><svg><use href="#i-portfolio"/></svg></div><strong>暂无跟踪中的计划</strong><span>生成模拟计划后，阶段、触发条件和证据时间点会出现在这里。</span>';
+      const pl = $('#plan-library'); if (pl) pl.innerHTML = '<div class="empty-state large"><div class="empty-icon"><svg><use href="#i-plan"/></svg></div><strong>还没有模拟计划</strong><span>从证券工作台开始，或直接使用五步向导定义目标、证据和风险边界。</span><button class="button primary" data-action="start-plan">开始五步向导</button></div>';
+      const tpl = $('#today-plan-list'); if (tpl) { tpl.className = 'empty-compact'; tpl.innerHTML = '<span>尚无模拟计划</span><small>完成证券研究后，可将证据快照带入五步向导。</small>'; }
+      const pl2 = $('#portfolio-ledger'); if (pl2) { pl2.className = 'empty-state large'; pl2.innerHTML = '<div class="empty-icon"><svg><use href="#i-portfolio"/></svg></div><strong>暂无跟踪中的计划</strong><span>生成模拟计划后，阶段、触发条件和证据时间点会出现在这里。</span>'; }
       return;
     }
-    $('#plan-library').innerHTML = `<div class="plan-card-grid">${state.plans.map(planCardHtml).join('')}</div>`;
+    const pl3 = $('#plan-library'); if (pl3) pl3.innerHTML = `<div class="plan-card-grid">${state.plans.map(planCardHtml).join('')}</div>`;
     const latest = state.plans[0];
     $('#today-plan-list').className = '';
     $('#today-plan-list').innerHTML = `<button class="signal-row row-button" data-plan-id="${escapeHtml(latest.id)}"><span class="signal-bar ${latest.status === 'frozen' ? 'partial' : 'positive'}"></span><div><strong>${escapeHtml(latest.userPlan.symbol)} · ${latest.status === 'frozen' ? '已冻结' : '观察阶段'}</strong><small>${escapeHtml(latest.version)} · ${escapeHtml(new Date(latest.createdAt).toLocaleString('zh-CN'))}</small></div><span class="status-chip ${latest.status === 'frozen' ? 'neutral' : 'partial'}">${latest.status === 'frozen' ? '待重评' : '待复核'}</span></button>`;
@@ -2270,12 +2270,14 @@
     const filtered = state.plans.filter((plan) => state.planFilter === 'all' || (state.planFilter === 'frozen' ? plan.status === 'frozen' : plan.status !== 'frozen'));
     $$('[data-plan-filter]').forEach((button) => button.classList.toggle('active', button.dataset.planFilter === state.planFilter));
     if (!filtered.length) {
-      $('#portfolio-ledger').className = 'empty-state large';
-      $('#portfolio-ledger').innerHTML = `<div class="empty-icon"><svg><use href="#i-portfolio"/></svg></div><strong>当前筛选下没有计划</strong><span>${state.planFilter === 'frozen' ? '冻结计划会保留原证据与版本，等待重新评估。' : '生成模拟计划后会进入人工复核队列。'}</span>`;
+      const pl = $('#portfolio-ledger');
+      if (pl) { pl.className = 'empty-state large'; pl.innerHTML = `<div class="empty-icon"><svg><use href="#i-portfolio"/></svg></div><strong>当前筛选下没有计划</strong><span>${state.planFilter === 'frozen' ? '冻结计划会保留原证据与版本，等待重新评估。' : '生成模拟计划后会进入人工复核队列。'}</span>`; }
       return;
     }
-    $('#portfolio-ledger').className = 'table-wrap portfolio-table';
-    $('#portfolio-ledger').innerHTML = `<table><thead><tr><th>计划</th><th>当前阶段</th><th>风险上限</th><th>证据快照</th><th>状态</th><th></th></tr></thead><tbody>${filtered.map((plan) => {
+    const pl = $('#portfolio-ledger');
+    if (!pl) return;
+    pl.className = 'table-wrap portfolio-table';
+    pl.innerHTML = `<table><thead><tr><th>计划</th><th>当前阶段</th><th>风险上限</th><th>证据快照</th><th>状态</th><th></th></tr></thead><tbody>${filtered.map((plan) => {
       const frozen = plan.status === 'frozen';
       return `<tr><td><div class="ticker-cell"><div class="ticker-logo">${escapeHtml(plan.userPlan.symbol.slice(0, 2))}</div><div><strong>${escapeHtml(plan.userPlan.symbol)}</strong><small>${escapeHtml(plan.version)} · ${escapeHtml(horizonLabel(plan.userPlan.horizon))}</small></div></div></td><td><span class="plan-stage">${frozen ? '冻结' : '观察'}</span></td><td>${plan.userPlan.drawdown}% 最大回撤</td><td>${plan.evidenceStatus === 'checked' ? '<span class="status-chip healthy">已检查</span>' : '<span class="status-chip partial">部分</span>'}</td><td><span class="status-chip ${frozen ? 'neutral' : 'partial'}">${frozen ? '待重评' : '待复核'}</span></td><td><button class="text-button" data-plan-id="${escapeHtml(plan.id)}">详情</button></td></tr>`;
     }).join('')}</tbody></table>`;
@@ -2599,8 +2601,10 @@
     $('#top-workspace-name').textContent = workspace.name;
     $('#sidebar-workspace-meta').textContent = `${workspace.short_name || type} · ${role}`;
     $('#top-workspace-type').textContent = workspaceTypeLabel(workspace.type);
-    $('#platform-current-workspace').textContent = workspace.name;
-    $('#platform-current-role').textContent = `${type} · ${role}`;
+    const pw = $('#platform-current-workspace');
+    if (pw) pw.textContent = workspace.name;
+    const pr = $('#platform-current-role');
+    if (pr) pr.textContent = `${type} · ${role}`;
     $$('[data-workspace-select]').forEach((button) => {
       const active = button.dataset.workspaceSelect === workspace.id;
       button.classList.toggle('active', active);
@@ -2849,8 +2853,8 @@
     $('#workspace-switcher-top').addEventListener('click', openWorkspaceModal);
     $('#close-workspace-modal').addEventListener('click', closeWorkspaceModal);
     $('#workspace-modal').addEventListener('click', (event) => { if (event.target === $('#workspace-modal')) closeWorkspaceModal(); });
-    $('#manage-platform').addEventListener('click', () => { closeWorkspaceModal(); showView('settings'); switchSettingsSection('overview'); });
-    $('#open-workspace-manager').addEventListener('click', openWorkspaceModal);
+    $('#manage-platform')?.addEventListener('click', () => { closeWorkspaceModal(); showView('settings'); switchSettingsSection('overview'); });
+    $('#open-workspace-manager')?.addEventListener('click', openWorkspaceModal);
     $('#command-modal').addEventListener('click', (event) => { if (event.target === $('#command-modal')) closeCommand(); });
     $('#command-search').addEventListener('input', (event) => renderCommandResults(event.target.value));
     $('#command-search').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); const first = $('#command-results button'); if (first) first.click(); else { closeCommand(); showView('research'); } } });
@@ -2863,52 +2867,52 @@
     $('#close-jobs').addEventListener('click', closeDrawers);
     $('#notifications-trigger').addEventListener('click', () => { $('#alert-symbol').value = state.symbol || ''; updateAlertFields(); renderAlerts(); openDrawer('alerts-drawer'); });
     $('#close-alerts').addEventListener('click', closeDrawers);
-    $('#close-plan-drawer').addEventListener('click', closeDrawers);
+    $('#close-plan-drawer')?.addEventListener('click', closeDrawers);
     $('#alert-form').addEventListener('submit', saveAlert);
     $('#alert-scope').addEventListener('change', updateAlertFields);
     $('#alert-condition').addEventListener('change', updateAlertFields);
-    $('#refresh-watchlist').addEventListener('click', loadWatchlist);
-    $('#edit-watchlist').addEventListener('click', openWatchlistManager);
-    $('#screener-tabs').addEventListener('click', (event) => { const button = event.target.closest('[data-screener-tab]'); if (!button) return; state.screenerTab = button.dataset.screenerTab; renderScreener(); });
-    $('#reset-filters').addEventListener('click', () => { $('#filter-market').value = 'US'; $('#filter-theme').selectedIndex = 0; $('#filter-healthy').checked = true; $('#filter-grok-review').checked = false; const ranges = $$('.range-field input'); if (ranges[0]) ranges[0].value = 4; if (ranges[1]) ranges[1].value = 2; updateRangeOutputs(); });
+    $('#refresh-watchlist')?.addEventListener('click', loadWatchlist);
+    $('#edit-watchlist')?.addEventListener('click', openWatchlistManager);
+    $('#screener-tabs')?.addEventListener('click', (event) => { const button = event.target.closest('[data-screener-tab]'); if (!button) return; state.screenerTab = button.dataset.screenerTab; renderScreener(); });
+    $('#reset-filters')?.addEventListener('click', () => { $('#filter-market').value = 'US'; $('#filter-theme').selectedIndex = 0; $('#filter-healthy').checked = true; $('#filter-grok-review').checked = false; const ranges = $$('.range-field input'); if (ranges[0]) ranges[0].value = 4; if (ranges[1]) ranges[1].value = 2; updateRangeOutputs(); });
     $$('.range-field input').forEach((input) => input.addEventListener('input', updateRangeOutputs));
-    $('#ticker-search-form').addEventListener('submit', (event) => { event.preventDefault(); openResearch($('#research-symbol').value); });
-    $('#watch-toggle').addEventListener('click', toggleWatchlist);
-    $('#chart-periods').addEventListener('click', (event) => { const button = event.target.closest('[data-period]'); if (!button) return; $$('[data-period]').forEach((item) => item.classList.toggle('active', item === button)); changeChartPeriod(button.dataset.period); });
-    $('#refresh-technical').addEventListener('click', async () => { if (!state.symbol) return; $('#technical-content').innerHTML = '<div class="loading-state"><span class="spinner"></span>更新技术指标</div>'; try { state.technical = await api(`/api/v1/stocks/${encodeURIComponent(state.symbol)}/technical?period=1y`); renderTechnical(state.technical); } catch (error) { renderTechnical(null); } });
-    $('#run-grok').addEventListener('click', () => runGrok());
-    $('#realtime-research-form').addEventListener('submit', runRealtimeResearch);
-    $('#save-realtime-monitor').addEventListener('click', () => createIntelligenceMonitor('realtime_research'));
-    $('#realtime-item-filters').addEventListener('click', (event) => { const button = event.target.closest('[data-realtime-filter]'); if (!button) return; state.realtimeFilter = button.dataset.realtimeFilter; $$('[data-realtime-filter]').forEach((item) => item.classList.toggle('active', item === button)); renderRealtimeItems(); });
-    $('#project-risk-form').addEventListener('submit', runProjectRisk);
-    $('#save-project-monitor').addEventListener('click', () => createIntelligenceMonitor('project_risk'));
-    $('#geo-form').addEventListener('submit', runGeopoliticalAnalysis);
+    $('#ticker-search-form')?.addEventListener('submit', (event) => { event.preventDefault(); openResearch($('#research-symbol')?.value); });
+    $('#watch-toggle')?.addEventListener('click', toggleWatchlist);
+    $('#chart-periods')?.addEventListener('click', (event) => { const button = event.target.closest('[data-period]'); if (!button) return; $$('[data-period]').forEach((item) => item.classList.toggle('active', item === button)); changeChartPeriod(button.dataset.period); });
+    $('#refresh-technical')?.addEventListener('click', async () => { if (!state.symbol) return; $('#technical-content').innerHTML = '<div class="loading-state"><span class="spinner"></span>更新技术指标</div>'; try { state.technical = await api(`/api/v1/stocks/${encodeURIComponent(state.symbol)}/technical?period=1y`); renderTechnical(state.technical); } catch (error) { renderTechnical(null); } });
+    $('#run-grok')?.addEventListener('click', () => runGrok());
+    $('#realtime-research-form')?.addEventListener('submit', runRealtimeResearch);
+    $('#save-realtime-monitor')?.addEventListener('click', () => createIntelligenceMonitor('realtime_research'));
+    $('#realtime-item-filters')?.addEventListener('click', (event) => { const button = event.target.closest('[data-realtime-filter]'); if (!button) return; state.realtimeFilter = button.dataset.realtimeFilter; $$('[data-realtime-filter]').forEach((item) => item.classList.toggle('active', item === button)); renderRealtimeItems(); });
+    $('#project-risk-form')?.addEventListener('submit', runProjectRisk);
+    $('#save-project-monitor')?.addEventListener('click', () => createIntelligenceMonitor('project_risk'));
+    $('#geo-form')?.addEventListener('submit', runGeopoliticalAnalysis);
     $('#sanctions-form').addEventListener('submit', runSanctionsNews);
     $('#market-form').addEventListener('submit', runMarketFunding);
     $('#agent-form').addEventListener('submit', runResearchAgent);
-    $('#export-realtime-pdf').addEventListener('click', () => downloadIntelligencePdf('realtime-research'));
-    $('#export-project-risk-pdf').addEventListener('click', () => downloadIntelligencePdf('project-risk'));
-    $('#export-geo-pdf').addEventListener('click', () => downloadIntelligencePdf('geopolitical-impact'));
-    $('#export-sanctions-pdf').addEventListener('click', () => downloadIntelligencePdf('sanctions-news'));
-    $('#export-market-pdf').addEventListener('click', () => downloadIntelligencePdf('market-funding'));
-    $('#export-agent-pdf').addEventListener('click', () => downloadIntelligencePdf('research-agent'));
-    $('#close-wizard').addEventListener('click', closeWizard);
-    $('#wizard-next').addEventListener('click', nextWizardStep);
-    $('#wizard-back').addEventListener('click', previousWizardStep);
-    $('#run-plan-evidence').addEventListener('click', runPlanEvidence);
-    $('#refresh-models').addEventListener('click', loadModels);
-    $('#model-result-tabs').addEventListener('click', (event) => { const button = event.target.closest('[data-model-tab]'); if (!button) return; state.modelTab = button.dataset.modelTab; renderModelDetail(); });
-    $('#new-model-button').addEventListener('click', openNewModelDialog);
-    $('#portfolio-filters').addEventListener('click', (event) => { const button = event.target.closest('[data-plan-filter]'); if (!button) return; state.planFilter = button.dataset.planFilter; renderPortfolioLedger(); });
-    $('#save-settings').addEventListener('click', saveCurrentSettings);
-    $('#save-brand').addEventListener('click', saveBrandConfig);
-    $('#reset-brand').addEventListener('click', resetBrandConfig);
-    $('#check-health').addEventListener('click', async () => { const ok = await checkHealth(); toast(ok ? '数据服务正常' : '数据服务不可用', ok ? '行情与接口通过健康检查' : '请检查后端服务', ok ? 'success' : 'error'); });
-    $('#overseas-api-form').addEventListener('submit', queryOverseasQuote);
-    $('#search-overseas').addEventListener('click', searchOverseasSecurities);
-    $('#history-overseas').addEventListener('click', loadOverseasHistory);
-    $('#probe-overseas').addEventListener('click', () => loadOverseasProviderStatus(true));
-    $('#overseas-result').addEventListener('click', (event) => {
+    $('#export-realtime-pdf')?.addEventListener('click', () => downloadIntelligencePdf('realtime-research'));
+    $('#export-project-risk-pdf')?.addEventListener('click', () => downloadIntelligencePdf('project-risk'));
+    $('#export-geo-pdf')?.addEventListener('click', () => downloadIntelligencePdf('geopolitical-impact'));
+    $('#export-sanctions-pdf')?.addEventListener('click', () => downloadIntelligencePdf('sanctions-news'));
+    $('#export-market-pdf')?.addEventListener('click', () => downloadIntelligencePdf('market-funding'));
+    $('#export-agent-pdf')?.addEventListener('click', () => downloadIntelligencePdf('research-agent'));
+    $('#close-wizard')?.addEventListener('click', closeWizard);
+    $('#wizard-next')?.addEventListener('click', nextWizardStep);
+    $('#wizard-back')?.addEventListener('click', previousWizardStep);
+    $('#run-plan-evidence')?.addEventListener('click', runPlanEvidence);
+    $('#refresh-models')?.addEventListener('click', loadModels);
+    $('#model-result-tabs')?.addEventListener('click', (event) => { const button = event.target.closest('[data-model-tab]'); if (!button) return; state.modelTab = button.dataset.modelTab; renderModelDetail(); });
+    $('#new-model-button')?.addEventListener('click', openNewModelDialog);
+    $('#portfolio-filters')?.addEventListener('click', (event) => { const button = event.target.closest('[data-plan-filter]'); if (!button) return; state.planFilter = button.dataset.planFilter; renderPortfolioLedger(); });
+    $('#save-settings')?.addEventListener('click', saveCurrentSettings);
+    $('#save-brand')?.addEventListener('click', saveBrandConfig);
+    $('#reset-brand')?.addEventListener('click', resetBrandConfig);
+    $('#check-health')?.addEventListener('click', async () => { const ok = await checkHealth(); toast(ok ? '数据服务正常' : '数据服务不可用', ok ? '行情与接口通过健康检查' : '请检查后端服务', ok ? 'success' : 'error'); });
+    $('#overseas-api-form')?.addEventListener('submit', queryOverseasQuote);
+    $('#search-overseas')?.addEventListener('click', searchOverseasSecurities);
+    $('#history-overseas')?.addEventListener('click', loadOverseasHistory);
+    $('#probe-overseas')?.addEventListener('click', () => loadOverseasProviderStatus(true));
+    $('#overseas-result')?.addEventListener('click', (event) => {
       const item = event.target.closest('[data-overseas-symbol]');
       if (!item) return;
       $('#overseas-symbol').value = item.dataset.overseasSymbol || '';
@@ -2916,8 +2920,8 @@
       $('#overseas-exchange').value = item.dataset.overseasExchange || '';
       queryOverseasQuote();
     });
-    $('#check-broker').addEventListener('click', checkBroker);
-    $('#refresh-governance').addEventListener('click', loadGovernance);
+    $('#check-broker')?.addEventListener('click', checkBroker);
+    $('#refresh-governance')?.addEventListener('click', loadGovernance);
     $$('[data-settings-section]').forEach((button) => button.addEventListener('click', () => switchSettingsSection(button.dataset.settingsSection)));
     $$('.mode-switch button').forEach((button) => button.addEventListener('click', () => { $$('.mode-switch button').forEach((item) => item.classList.toggle('active', item === button)); if (button.dataset.mode === 'admin') { showView('settings'); switchSettingsSection('overview'); toast('已进入平台视图', '管理工作区、客户化、连接器和治理策略'); } else showView('today'); }));
   }
@@ -2951,7 +2955,7 @@
     renderRiskDimensions([], projectWorkflow?.dimensions || Object.entries(PROJECT_RISK_LABELS).map(([id, label]) => ({ id, label })));
     const healthy = await checkHealth();
     if (healthy) loadWatchlist();
-    else $('#watchlist-body').innerHTML = '<tr><td colspan="5"><div class="empty-state small"><strong>等待数据服务</strong><span>启动后端后可重新加载实时行情。</span><button class="button ghost" id="watchlist-retry">重试</button></div></td></tr>';
+    else { const wb = $('#watchlist-body'); if (wb) wb.innerHTML = '<tr><td colspan="5"><div class="empty-state small"><strong>等待数据服务</strong><span>启动后端后可重新加载实时行情。</span><button class="button ghost" id="watchlist-retry">重试</button></div></td></tr>'; }
     $('#watchlist-retry')?.addEventListener('click', async () => { if (await checkHealth()) loadWatchlist(); });
   }
 
