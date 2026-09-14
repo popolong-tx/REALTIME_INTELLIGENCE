@@ -98,27 +98,16 @@
 
         <section class="view" id="view-realtime-research" data-title="实时信息检索">
           <div class="page-heading compact intelligence-page-heading"><div><p class="eyebrow">REALTIME OPEN-SOURCE RESEARCH</p><h1>一次检索，分开看 X 原文与公共开放信息。</h1><p>按关键词和日期范围调用 Grok 搜索，保留原始链接、来源类型、证据状态和工具降级记录。</p></div><div class="model-badge"><span class="live-pip"></span><div><strong>Grok 4.3</strong><small>Web Search · X Search · Code Interpreter</small></div></div></div>
-          <div class="intelligence-workbench realtime-workbench">
+          <div class="intelligence-workbench">
             <aside class="panel intelligence-query-panel">
               <div class="panel-head"><div><p class="section-kicker">QUERY SCOPE</p><h2>定义检索范围</h2></div><span class="status-chip neutral" id="realtime-form-status">待输入</span></div>
-              <section class="material-dropzone" aria-labelledby="material-dropzone-title">
-                <div class="material-dropzone-head"><div><p class="section-kicker">PRIVATE RESEARCH PACK</p><h3 id="material-dropzone-title">第三方资料</h3></div><button class="text-button" id="new-material-session" type="button">新建资料集</button></div>
-                <p class="material-isolation-note">当前资料集独立隔离，只会用于本次联合分析。</p>
-                <label class="upload-picker"><input id="material-upload" type="file" multiple accept=".pdf,.docx,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp"><span><strong>选择 PDF、文档或截图</strong><small>单文件 ≤ 25 MB · 支持 PDF / DOCX / TXT / Markdown / CSV / JSON / HTML / PNG / JPEG / WebP</small></span></label>
-                <div id="material-list" class="material-list"><div class="empty-state small"><strong>尚未添加资料</strong><span>上传后将在当前资料集内联合分析。</span></div></div>
-                <label class="field-label material-question">联合分析问题<textarea id="material-question" rows="2" maxlength="2000" placeholder="例如：比较这些资料对项目融资风险的共同结论、冲突和待核实事项"></textarea></label>
-                <label class="check-row compact-check"><input id="material-consent" type="checkbox"><span>我允许将当前资料集发送至已配置的 OCI/Grok 进行联合分析</span></label>
-                <button class="button secondary full" id="analyze-materials" type="button" disabled><svg><use href="#i-lab"/></svg>联合分析当前资料集</button>
-              </section>
               <form id="realtime-research-form" class="intelligence-form">
                 <label class="field-label">主题 / 问题<textarea id="realtime-query" required rows="4" maxlength="1600" placeholder="例如：某公司近期产品发布、市场反馈和监管风险"></textarea></label>
-                <div class="query-template-row" aria-label="常用研究模板"><span>快速开始</span><button type="button" class="query-template" data-query-template="过去 7 天，某公司在产品、监管和市场反馈方面发生了什么变化？请区分事实、观点和待核实信息。">事件变化</button><button type="button" class="query-template" data-query-template="过去 30 天，某行业或项目有哪些可能影响融资条件、估值或合作关系的公开信号？">投资影响</button><button type="button" class="query-template" data-query-template="请核查该实体近期的负面新闻、监管行动、诉讼和制裁风险，并列出需要人工验证的事项。">风险核查</button></div>
                 <label class="field-label">关键词与别名<input id="realtime-keywords" maxlength="500" placeholder="用逗号分隔，例如：公司名称, 品牌名"></label>
-                <div class="date-range-fields"><label class="field-label">开始日期<input id="realtime-date-from" type="date"></label><label class="field-label">结束日期<input id="realtime-date-to" type="date"></label></div>
-                <fieldset class="focus-field realtime-source-field"><legend>信息通道</legend><label><input type="checkbox" name="realtime-source" value="x" checked><span>X 最新公开内容</span></label><label><input type="checkbox" name="realtime-source" value="web" checked><span>公共开放网页</span></label></fieldset>
+                <label class="field-label">实时窗口<select id="realtime-window"><option value="1">过去 24 小时</option><option value="7" selected>过去 7 天</option><option value="30">过去 30 天</option><option value="90">过去 90 天</option></select></label>
+                <fieldset class="focus-field"><legend>信息通道</legend><label><input type="checkbox" name="realtime-source" value="x" checked><span>X 最新公开内容</span></label><label><input type="checkbox" name="realtime-source" value="web" checked><span>公共开放网页</span></label></fieldset>
                 <label class="check-row compact-check"><input id="realtime-preserve-original" type="checkbox" checked><span>尽量保留带引用的 X 原文</span></label>
                 <label class="check-row compact-check"><input id="realtime-use-code" type="checkbox" checked><span>使用代码计算去重、计数和趋势</span></label>
-                <label class="field-label">最大结果数<select id="realtime-max-results"><option value="10">10 条</option><option value="20">20 条</option><option value="30" selected>30 条</option><option value="50">50 条</option></select></label>
                 <label class="field-label">推理模型<select id="realtime-model"><option value="">默认模型</option></select></label>
                 <button class="button primary full" id="run-realtime-research" type="submit"><svg><use href="#i-search"/></svg>运行实时检索</button>
                 <div class="schedule-builder"><label class="field-label">定时监控间隔<select id="realtime-monitor-interval"><option value="30">每 30 分钟</option><option value="60" selected>每 1 小时</option><option value="120">每 2 小时</option><option value="240">每 4 小时</option><option value="360">每 6 小时</option><option value="480">每 8 小时</option><option value="720">每 12 小时</option><option value="1440">每 24 小时</option></select></label><button class="button ghost full" id="save-realtime-monitor" type="button"><svg><use href="#i-bell"/></svg>保存定时监控</button><small class="auto-report-note">每次真实检索成功后自动保存 PDF 报告</small></div>

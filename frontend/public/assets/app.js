@@ -1256,12 +1256,10 @@
     if (workflow === 'realtime-research') {
       $('#realtime-query').value = context.query || '';
       $('#realtime-keywords').value = (context.keywords || []).join(', ');
-      $('#realtime-date-from').value = context.date_from || '';
-      $('#realtime-date-to').value = context.date_to || '';
+      if (context.window_days) { const w = $('#realtime-window'); if (w) w.value = String(context.window_days); }
       $$('input[name="realtime-source"]').forEach((input) => { input.checked = (context.source_channels || []).includes(input.value); });
       $('#realtime-use-code').checked = context.use_code_interpreter !== false;
       $('#realtime-preserve-original').checked = context.preserve_x_original !== false;
-      $('#realtime-max-results').value = String(context.max_results || 30);
       return;
     }
     if (workflow === 'project-risk') {
@@ -1430,15 +1428,20 @@
   }
 
   function realtimeResearchPayload() {
+    const days = Number($('#realtime-window')?.value || 7);
+    const to = new Date();
+    const from = new Date(to);
+    from.setDate(from.getDate() - days);
     return {
       query: $('#realtime-query').value.trim(),
       keywords: splitList($('#realtime-keywords').value),
-      date_from: $('#realtime-date-from').value || null,
-      date_to: $('#realtime-date-to').value || null,
+      date_from: from.toISOString().slice(0, 10),
+      date_to: to.toISOString().slice(0, 10),
       source_channels: $$('input[name="realtime-source"]:checked').map((input) => input.value),
       use_code_interpreter: $('#realtime-use-code').checked,
       preserve_x_original: $('#realtime-preserve-original').checked,
-      max_results: Number($('#realtime-max-results').value),
+      max_results: 30,
+      window_days: days,
       workspace_id: state.workspaceId,
       model_id: $('#realtime-model')?.value || null,
     };
@@ -1709,12 +1712,10 @@
       showView('realtime-research');
       $('#realtime-query').value = payload.query || '';
       $('#realtime-keywords').value = (payload.keywords || []).join(', ');
-      $('#realtime-date-from').value = payload.date_from || '';
-      $('#realtime-date-to').value = payload.date_to || '';
+      if (payload.window_days) { const w = $('#realtime-window'); if (w) w.value = String(payload.window_days); }
       $$('input[name="realtime-source"]').forEach((input) => { input.checked = (payload.source_channels || []).includes(input.value); });
       $('#realtime-use-code').checked = payload.use_code_interpreter !== false;
       $('#realtime-preserve-original').checked = payload.preserve_x_original !== false;
-      $('#realtime-max-results').value = String(payload.max_results || 30);
       $('#realtime-monitor-interval').value = String(item.schedule_minutes);
       if (item.last_result) renderRealtimeResearchResult(item.last_result);
       return;
@@ -3016,10 +3017,6 @@
     applyBrandConfig(state.brand);
     renderWorkspaceContext();
     const today = new Date();
-    const priorDay = new Date(today);
-    priorDay.setDate(priorDay.getDate() - 1);
-    $('#realtime-date-to').value = today.toISOString().slice(0, 10);
-    $('#realtime-date-from').value = priorDay.toISOString().slice(0, 10);
     $('#today-date').textContent = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long', timeZone: 'Asia/Shanghai' }).format(new Date()).toUpperCase();
     updateClock();
     setInterval(updateClock, 1000);
