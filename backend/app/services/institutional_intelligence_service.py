@@ -220,6 +220,60 @@ class InstitutionalIntelligenceService:
         result = self._normalize_realtime_research(raw, request, from_date, to_date)
         return await self._ensure_simplified_chinese(result)
 
+    async def analyze_materials(
+        self,
+        *,
+        question: str,
+        text_inputs: List[Dict[str, Any]],
+        image_inputs: List[Dict[str, Any]],
+        model_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Jointly analyze only materials from the current isolated session."""
+        if not self.configured:
+            return {
+                "status": "configuration_required",
+                "workflow": "material-analysis",
+                "analysis": {},
+                "evidence": [],
+                "warnings": ["OCI Grok 尚未配置；没有读取外部资料并生成模拟分析。"],
+            }
+        context = "\n\n".join(f"资料：{item['filename']}\n{item['text']}" for item in text_inputs)
+        prompt = (
+            "你是一名机构研究分析师。只能依据本次任务提供的资料回答，不得调用或假设其他任务的资料。\n"
+            f"研究问题：{question}\n\n文本资料：\n{context[:300000]}\n\n"
+            "请返回 JSON，包含 executive_summary、key_findings、contradictions、unknowns、"
+            "decision_implications 和 citations。明确区分原文事实、资料间冲突和模型推断；"
+            "截图中的表格、图表、日期、金额和主体必须说明所在文件，无法辨认时标记为待核实。"
+        )
+        if image_inputs:
+            raw = await oci_responses_service.generate_multimodal(
+                prompt=prompt,
+                images=image_inputs,
+                system_prompt=SIMPLIFIED_CHINESE_OUTPUT_RULE,
+                model_id=model_id or settings.OCI_GROK_MODEL_ID,
+            )
+        else:
+            raw = await oci_responses_service.generate_text(
+                prompt=prompt,
+                system_prompt=SIMPLIFIED_CHINESE_OUTPUT_RULE,
+                model_id=model_id or settings.OCI_GROK_MODEL_ID,
+                max_tokens=6000,
+                temperature=0.1,
+            )
+        raw_text = raw.get("inferenceResponse", {}).get("text", "")
+        analysis = self._extract_json_object(raw_text) or {
+            "executive_summary": raw_text,
+            "unknowns": ["结构化输出解析失败，需人工复核原始回复"],
+        }
+        return {
+            "status": "live",
+            "workflow": "material-analysis",
+            "analysis": analysis,
+            "evidence": [{"material_id": item["material_id"], "filename": item["filename"]} for item in text_inputs + image_inputs],
+            "warnings": ["本次联合分析仅使用当前研究会话上传的资料。", "截图中的不可辨认内容不应被视为事实。"],
+            "audit": {**(raw.get("metadata") or {}), "source_scope": "session_materials_only"},
+        }
+
     async def analyze_project_risk(self, request: Dict[str, Any]) -> Dict[str, Any]:
         if not self.configured:
             return self._configuration_required(
@@ -612,7 +666,7 @@ class InstitutionalIntelligenceService:
       "label": "中文指标名称",
       "current_assessment": "中文当前状况",
       "trend": "rising|stable|falling|volatile|unknown",
-      "impact_on_投资平台": "对 投资平台 融资活动的中文影响分析",
+      "impact_on_aiib": "对融资活动的中文影响分析",
       "evidence_refs": ["来源 URL"],
       "data_points": ["关键数据点"]
     }}
@@ -782,6 +836,7 @@ class InstitutionalIntelligenceService:
             "status": "partial" if degraded_tools else "live",
             "workflow": workflow,
             "evidence_quality": "cited" if citations else "unverified",
+            "forecast_governance": self._forecast_governance(analysis),
             "analysis": analysis,
             "evidence": citations,
             "analysis_framework": framework,
@@ -839,6 +894,7 @@ class InstitutionalIntelligenceService:
             "status": "partial" if degraded_tools else "live",
             "workflow": "realtime-research",
             "evidence_quality": "cited" if citations else "unverified",
+            "forecast_governance": self._forecast_governance(analysis),
             "coverage": "best_effort",
             "analysis": analysis,
             "items": items,
@@ -973,6 +1029,25 @@ class InstitutionalIntelligenceService:
                 "matched_keywords": item.get("matched_keywords") or [],
             })
         return normalized
+
+    @staticmethod
+    def _forecast_governance(analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """Make the boundary between scenario reasoning and calibrated forecasts explicit."""
+        scenario_keys = {"scenarios", "forecast", "forecasts", "outlook", "trends"}
+        has_scenario_language = bool(scenario_keys.intersection(analysis.keys()))
+        return {
+            "contains_scenario_reasoning": has_scenario_language,
+            "calibration_status": "not_calibrated",
+            "probability_semantics": "qualitative_only",
+            "historical_backtest": "not_available",
+            "decision_use": "research_and_human_review_only",
+            "required_before_automated_use": [
+                "明确预测事件与截止时间",
+                "保存预测生成时点和信息集",
+                "使用历史样本进行概率校准与分层回测",
+                "记录命中率、Brier 分数和失效条件",
+            ],
+        }
 
     @staticmethod
     def _extract_json_object(text: str) -> Optional[Dict[str, Any]]:

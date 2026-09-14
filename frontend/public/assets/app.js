@@ -1911,19 +1911,28 @@
   }
 
   function renderSanctionsResult(result) {
-    const audit = result?.audit || {};
-    const evidence = result?.evidence || [];
+    const hasLiveResult = ['live', 'partial'].includes(result?.status);
+    const partial = result?.status === 'partial';
     const analysis = result?.analysis || {};
-    setChip($('#sanctions-status'), result?.status === 'live' ? '已完成' : '部分结果', result?.status === 'live' ? 'healthy' : 'partial');
-    $('#sanctions-asof').textContent = `AS OF ${timestamp(new Date(audit.generated_at || Date.now()))}`;
-    const summary = analysis.executive_summary || result?.output_text || '模型未返回综述文本。';
-    $('#sanctions-summary').innerHTML = `<div class="synthesis-copy"><p>${escapeHtml(summary)}</p><div class="synthesis-meta"><span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>GENERATED ${escapeHtml(timestamp(new Date(audit.generated_at || Date.now())))}</span></div></div>`;
-    $('#sanctions-audit').innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>REQUEST ${escapeHtml(String(audit.request_id || '—').slice(0, 12))}</span>`;
+    setChip($('#sanctions-status'), hasLiveResult ? (partial ? '部分完成' : '已完成') : '尚未运行', hasLiveResult ? (partial ? 'partial' : 'healthy') : 'neutral');
+    $('#sanctions-asof').textContent = hasLiveResult ? `截至 ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '等待查询';
+    $('#sanctions-summary').className = hasLiveResult ? 'brief-copy' : 'brief-placeholder';
+    $('#sanctions-summary').innerHTML = hasLiveResult
+      ? `<p>${escapeHtml(analysis.executive_summary || result?.output_text || '本次没有返回可解析的综述。')}</p>`
+      : '<strong>输入审查对象后运行合规检索</strong><span>将检索制裁名单、负面媒体、监管行动和诉讼信息。</span>';
+    renderAuditRibbon('#sanctions-audit', result);
     const findings = analysis.findings || [];
-    if (findings.length) {
-      $('#sanctions-findings').innerHTML = findings.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.category || '发现')}</strong><p>${escapeHtml(f.finding || '')}</p><small>${escapeHtml(f.evidence_status || '')} · ${escapeHtml((f.source_refs || []).join(', ') || '无来源')}</small></div>`).join('');
+    const findingsContainer = $('#sanctions-findings');
+    if (findingsContainer) {
+      if (findings.length) {
+        findingsContainer.innerHTML = findings.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.category || '发现')}</strong><p>${escapeHtml(f.finding || '')}</p><small>${escapeHtml(f.evidence_status || '')} · ${escapeHtml((f.source_refs || []).join(', ') || '无来源')}</small></div>`).join('');
+      } else if (hasLiveResult) {
+        findingsContainer.innerHTML = '<div class="empty-state small"><strong>没有风险发现</strong><span>本次审查未发现匹配的风险线索。</span></div>';
+      }
     }
-    renderSourceList('#sanctions-sources', evidence);
+    renderInstitutionalSources('#sanctions-sources', result?.evidence || [], '合规审查完成后逐条展示来源与证据状态。');
+    updateIntelligencePdfButton('sanctions-news', result);
+    trackActiveIntelligenceHistory('sanctions-news', result);
   }
 
   // ── 场景 04：市场与资金环境 ──────────────────────────────────────
@@ -1967,19 +1976,28 @@
   }
 
   function renderMarketResult(result) {
-    const audit = result?.audit || {};
-    const evidence = result?.evidence || [];
+    const hasLiveResult = ['live', 'partial'].includes(result?.status);
+    const partial = result?.status === 'partial';
     const analysis = result?.analysis || {};
-    setChip($('#market-status'), result?.status === 'live' ? '已完成' : '部分结果', result?.status === 'live' ? 'healthy' : 'partial');
-    $('#market-asof').textContent = `AS OF ${timestamp(new Date(audit.generated_at || Date.now()))}`;
-    const summary = analysis.executive_summary || result?.output_text || '模型未返回综述文本。';
-    $('#market-summary').innerHTML = `<div class="synthesis-copy"><p>${escapeHtml(summary)}</p><div class="synthesis-meta"><span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>GENERATED ${escapeHtml(timestamp(new Date(audit.generated_at || Date.now())))}</span></div></div>`;
-    $('#market-audit').innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>REQUEST ${escapeHtml(String(audit.request_id || '—').slice(0, 12))}</span>`;
+    setChip($('#market-status'), hasLiveResult ? (partial ? '部分完成' : '已完成') : '尚未运行', hasLiveResult ? (partial ? 'partial' : 'healthy') : 'neutral');
+    $('#market-asof').textContent = hasLiveResult ? `截至 ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '等待查询';
+    $('#market-summary').className = hasLiveResult ? 'brief-copy' : 'brief-placeholder';
+    $('#market-summary').innerHTML = hasLiveResult
+      ? `<p>${escapeHtml(analysis.executive_summary || result?.output_text || '本次没有返回可解析的综述。')}</p>`
+      : '<strong>输入研究主题后运行市场分析</strong><span>将分析利率、汇率、信用利差、商品价格和融资条件。</span>';
+    renderAuditRibbon('#market-audit', result);
     const indicators = analysis.key_findings || [];
-    if (indicators.length) {
-      $('#market-indicators').innerHTML = indicators.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.indicator || '指标')}</strong><p>${escapeHtml(f.current_assessment || '')}</p><small>趋势: ${escapeHtml(f.trend || '—')} · 影响: ${escapeHtml(f.impact_on_投资平台 || '—')}</small></div>`).join('');
+    const indContainer = $('#market-indicators');
+    if (indContainer) {
+      if (indicators.length) {
+        indContainer.innerHTML = indicators.map((f) => `<div class="synthesis-copy"><strong>${escapeHtml(f.label || f.indicator || '指标')}</strong><p>${escapeHtml(f.current_assessment || '')}</p><small>趋势: ${escapeHtml(f.trend || '—')} · 影响: ${escapeHtml(f.impact_on_aiib || '—')}</small></div>`).join('');
+      } else if (hasLiveResult) {
+        indContainer.innerHTML = '<div class="empty-state small"><strong>没有指标数据</strong><span>本次分析未返回结构化指标。</span></div>';
+      }
     }
-    renderSourceList('#market-sources', evidence);
+    renderInstitutionalSources('#market-sources', result?.evidence || [], '市场分析完成后逐条展示来源与数据引用。');
+    updateIntelligencePdfButton('market-funding', result);
+    trackActiveIntelligenceHistory('market-funding', result);
   }
 
   // ── 场景 05：研究与数据 Agent ──────────────────────────────────────
@@ -2022,19 +2040,28 @@
   }
 
   function renderAgentResult(result) {
-    const audit = result?.audit || {};
-    const evidence = result?.evidence || [];
+    const hasLiveResult = ['live', 'partial'].includes(result?.status);
+    const partial = result?.status === 'partial';
     const analysis = result?.analysis || {};
-    setChip($('#agent-status'), result?.status === 'live' ? '已完成' : '部分结果', result?.status === 'live' ? 'healthy' : 'partial');
-    $('#agent-asof').textContent = `AS OF ${timestamp(new Date(audit.generated_at || Date.now()))}`;
-    const summary = analysis.executive_summary || result?.output_text || '模型未返回综述文本。';
-    $('#agent-summary').innerHTML = `<div class="synthesis-copy"><p>${escapeHtml(summary)}</p><div class="synthesis-meta"><span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>GENERATED ${escapeHtml(timestamp(new Date(audit.generated_at || Date.now())))}</span></div></div>`;
-    $('#agent-audit').innerHTML = `<span>MODEL ${escapeHtml(audit.model || '—')}</span><span>SOURCES ${evidence.length}</span><span>REQUEST ${escapeHtml(String(audit.request_id || '—').slice(0, 12))}</span>`;
+    setChip($('#agent-status'), hasLiveResult ? (partial ? '部分完成' : '已完成') : '尚未运行', hasLiveResult ? (partial ? 'partial' : 'healthy') : 'neutral');
+    $('#agent-asof').textContent = hasLiveResult ? `截至 ${timestamp(new Date(result.audit?.generated_at || Date.now()))}` : '等待执行';
+    $('#agent-summary').className = hasLiveResult ? 'brief-copy' : 'brief-placeholder';
+    $('#agent-summary').innerHTML = hasLiveResult
+      ? `<p>${escapeHtml(analysis.executive_summary || result?.output_text || '本次没有返回可解析的综述。')}</p>`
+      : '<strong>输入研究问题后运行数据 Agent</strong><span>将使用代码解释器进行数据处理、统计分析和趋势计算。</span>';
+    renderAuditRibbon('#agent-audit', result);
     const computation = analysis.computation_results || [];
-    if (computation.length) {
-      $('#agent-computation').innerHTML = computation.map((c) => `<div class="synthesis-copy"><strong>${escapeHtml(c.description || '计算')}</strong><p>方法: ${escapeHtml(c.method || '—')}</p><p>结果: ${escapeHtml(String(c.result || '—'))}</p><small>可复现: ${c.reproducible ? '是' : '否'}</small></div>`).join('');
+    const compContainer = $('#agent-computation');
+    if (compContainer) {
+      if (computation.length) {
+        compContainer.innerHTML = computation.map((c) => `<div class="synthesis-copy"><strong>${escapeHtml(c.description || '计算')}</strong><p>方法: ${escapeHtml(c.method || '—')}</p><p>结果: ${escapeHtml(String(c.result || '—'))}</p><small>可复现: ${c.reproducible ? '是' : '否'}</small></div>`).join('');
+      } else if (hasLiveResult) {
+        compContainer.innerHTML = '<div class="empty-state small"><strong>没有计算结果</strong><span>本次分析未包含代码计算步骤。</span></div>';
+      }
     }
-    renderSourceList('#agent-sources', evidence);
+    renderInstitutionalSources('#agent-sources', result?.evidence || [], '研究 Agent 执行完成后逐条展示数据来源与交叉验证结果。');
+    updateIntelligencePdfButton('research-agent', result);
+    trackActiveIntelligenceHistory('research-agent', result);
   }
 
   const ALERT_CONDITIONS = {
