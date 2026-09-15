@@ -285,7 +285,7 @@ class InstitutionalIntelligenceService:
 
         window_days = int(request.get("window_days") or 7)
         from_date = (datetime.now(timezone.utc) - timedelta(days=window_days)).date().isoformat()
-        prompt = self._project_risk_prompt(request)
+        prompt = await self._append_materials_context(request, self._project_risk_prompt(request))
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
@@ -320,7 +320,7 @@ class InstitutionalIntelligenceService:
 
         window_days = int(request.get("window_days") or 30)
         from_date = (datetime.now(timezone.utc) - timedelta(days=window_days)).date().isoformat()
-        prompt = self._geopolitical_prompt(request)
+        prompt = await self._append_materials_context(request, self._geopolitical_prompt(request))
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
@@ -358,7 +358,7 @@ class InstitutionalIntelligenceService:
 
         window_days = int(request.get("window_days") or 30)
         from_date = (datetime.now(timezone.utc) - timedelta(days=window_days)).date().isoformat()
-        prompt = self._sanctions_news_prompt(request)
+        prompt = await self._append_materials_context(request, self._sanctions_news_prompt(request))
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
@@ -396,7 +396,7 @@ class InstitutionalIntelligenceService:
 
         window_days = int(request.get("window_days") or 30)
         from_date = (datetime.now(timezone.utc) - timedelta(days=window_days)).date().isoformat()
-        prompt = self._market_funding_prompt(request)
+        prompt = await self._append_materials_context(request, self._market_funding_prompt(request))
         raw = await oci_responses_service.generate_realtime_research(
             prompt=prompt,
             system_prompt=(
@@ -588,6 +588,35 @@ class InstitutionalIntelligenceService:
 
 {SIMPLIFIED_CHINESE_OUTPUT_RULE}
 """.strip()
+
+    async def _append_materials_context(self, request: Dict[str, Any], prompt: str) -> str:
+        """Fetch uploaded materials from session and append to prompt."""
+        material_session_id = request.get("material_session_id")
+        if not material_session_id:
+            return prompt
+        try:
+            from app.services.intelligence_material_service import intelligence_material_service
+            from app.core.database import get_db
+            db = next(get_db())
+            try:
+                materials = intelligence_material_service.list_materials(
+                    db, session_id=material_session_id, workspace_id=request.get("workspace_id", "personal")
+                )
+            finally:
+                db.close()
+            if not materials:
+                return prompt
+            text_parts = []
+            for m in materials:
+                text_content = getattr(m, 'text_content', None) or ''
+                if text_content:
+                    text_parts.append(f"资料：{m.filename}\n{text_content[:50000]}")
+            if text_parts:
+                prompt += "\n\n--- 用户上传的参考文档 ---\n" + "\n\n".join(text_parts[:10])
+                prompt += "\n--- 文档结束 ---\n请结合上述文档内容和检索结果进行综合分析。"
+        except Exception:
+            pass  # Material fetch failure should not block the main analysis
+        return prompt
 
     @staticmethod
     def _sanctions_news_prompt(request: Dict[str, Any]) -> str:

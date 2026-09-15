@@ -58,6 +58,7 @@ class ProjectRiskRequest(BaseModel):
     monitoring_question: Optional[str] = Field(default=None, max_length=1000)
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
     model_id: Optional[str] = Field(default=None, max_length=100)
+    material_session_id: Optional[str] = Field(default=None, max_length=100)
 
 
 class GeopoliticalImpactRequest(BaseModel):
@@ -70,6 +71,7 @@ class GeopoliticalImpactRequest(BaseModel):
     decision_question: Optional[str] = Field(default=None, max_length=1200)
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
     model_id: Optional[str] = Field(default=None, max_length=100)
+    material_session_id: Optional[str] = Field(default=None, max_length=100)
 
 
 class RealtimeResearchRequest(BaseModel):
@@ -134,6 +136,7 @@ class SanctionsNewsRequest(BaseModel):
     additional_context: Optional[str] = Field(default=None, max_length=1000)
     model_id: Optional[str] = Field(default=None, max_length=100)
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
+    material_session_id: Optional[str] = Field(default=None, max_length=100)
 
 
 # ── 投资平台 五类场景：市场与资金环境 ──────────────────────────────────────
@@ -149,6 +152,7 @@ class MarketFundingRequest(BaseModel):
     decision_context: Optional[str] = Field(default=None, max_length=1200)
     model_id: Optional[str] = Field(default=None, max_length=100)
     workspace_id: str = Field(default="personal", min_length=1, max_length=80)
+    material_session_id: Optional[str] = Field(default=None, max_length=100)
 
 
 # ── 投资平台 五类场景：研究与数据 Agent ──────────────────────────────────────

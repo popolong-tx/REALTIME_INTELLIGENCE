@@ -61,6 +61,14 @@
     realtimeResearch: null,
     materialSessionId: '',
     materials: [],
+    projectMaterials: [],
+    projectMaterialSessionId: '',
+    geoMaterials: [],
+    geoMaterialSessionId: '',
+    sanctionsMaterials: [],
+    sanctionsMaterialSessionId: '',
+    marketMaterials: [],
+    marketMaterialSessionId: '',
     realtimeFilter: 'all',
     projectRisk: null,
     geopoliticalImpact: null,
@@ -195,6 +203,43 @@
     const result = await api(`/api/v1/intelligence/materials/sessions?workspace_id=${encodeURIComponent(state.workspaceId)}`, { method: 'POST' });
     state.materialSessionId = result.session_id;
     return state.materialSessionId;
+  }
+
+  async function uploadPageMaterials(page, files) {
+    if (!files?.length) return;
+    const sessionKey = `${page}MaterialSessionId`;
+    const listKey = `${page}Materials`;
+    if (!state[sessionKey]) {
+      try {
+        const session = await api(`/api/v1/intelligence/materials/sessions?workspace_id=${encodeURIComponent(state.workspaceId)}`, { method: 'POST' });
+        state[sessionKey] = session.session_id;
+      } catch (error) { toast('创建资料会话失败', error.message, 'error'); return; }
+    }
+    const picker = $(`#${page}-material-upload`);
+    if (picker) picker.disabled = true;
+    try {
+      for (const file of Array.from(files)) {
+        const body = new FormData();
+        body.append('file', file);
+        await api(`/api/v1/intelligence/materials/sessions/${encodeURIComponent(state[sessionKey])}/upload?workspace_id=${encodeURIComponent(state.workspaceId)}`, { method: 'POST', body, timeout: 90000 });
+      }
+      const data = await api(`/api/v1/intelligence/materials/sessions/${encodeURIComponent(state[sessionKey])}?workspace_id=${encodeURIComponent(state.workspaceId)}`);
+      state[listKey] = data.items || [];
+      renderPageMaterials(page);
+      toast('文档已上传', `${state[listKey].length} 份文档将与检索结果联合分析`);
+    } catch (error) {
+      toast('文档上传失败', error.message, 'error');
+    } finally {
+      if (picker) { picker.disabled = false; picker.value = ''; }
+    }
+  }
+
+  function renderPageMaterials(page) {
+    const container = $(`#${page}-material-list`);
+    const items = state[`${page}Materials`] || [];
+    if (!container) return;
+    if (!items.length) { container.innerHTML = ''; return; }
+    container.innerHTML = items.map((item) => `<div class="material-row"><span class="material-type">${escapeHtml((item.content_type || 'file').split('/').pop().toUpperCase())}</span><strong>${escapeHtml(item.filename)}</strong><small>${formatNumber(item.byte_size)} bytes</small></div>`).join('');
   }
 
   async function uploadMaterials(files) {
@@ -1547,6 +1592,7 @@
       monitoring_question: $('#project-question').value.trim() || null,
       workspace_id: state.workspaceId,
       model_id: $('#project-risk-model')?.value || null,
+      material_session_id: state.projectMaterialSessionId || null,
     };
   }
 
@@ -1812,6 +1858,7 @@
       decision_question: $('#geo-question').value.trim() || null,
       workspace_id: state.workspaceId,
       model_id: $('#geo-model')?.value || null,
+      material_session_id: state.geoMaterialSessionId || null,
     };
   }
 
@@ -1891,6 +1938,7 @@
       additional_context: $('#sanctions-context').value.trim() || null,
       model_id: $('#sanctions-model')?.value || null,
       workspace_id: state.workspaceId,
+      material_session_id: state.sanctionsMaterialSessionId || null,
     };
   }
 
@@ -1956,6 +2004,7 @@
       decision_context: $('#market-context').value.trim() || null,
       model_id: $('#market-model')?.value || null,
       workspace_id: state.workspaceId,
+      material_session_id: state.marketMaterialSessionId || null,
     };
   }
 
@@ -2959,6 +3008,10 @@
     $('#realtime-research-form')?.addEventListener('submit', runRealtimeResearch);
     $('#material-upload')?.addEventListener('change', (event) => uploadMaterials(event.target.files));
     $('#analyze-materials')?.addEventListener('click', analyzeMaterials);
+    $('#project-material-upload')?.addEventListener('change', (event) => uploadPageMaterials('project', event.target.files));
+    $('#geo-material-upload')?.addEventListener('change', (event) => uploadPageMaterials('geo', event.target.files));
+    $('#sanctions-material-upload')?.addEventListener('change', (event) => uploadPageMaterials('sanctions', event.target.files));
+    $('#market-material-upload')?.addEventListener('change', (event) => uploadPageMaterials('market', event.target.files));
     $('#new-material-session')?.addEventListener('click', () => {
       state.materialSessionId = '';
       state.materials = [];

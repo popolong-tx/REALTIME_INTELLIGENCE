@@ -180,6 +180,12 @@ main { width: 100%; max-width: 1600px; min-height: calc(100vh - 67px); padding: 
 .upload-picker input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
 .upload-picker strong { display: block; font-size: 12px; }
 .upload-picker small { margin-top: 3px; color: var(--subtle); font-size: 10px; font-weight: 400; }
+.upload-picker.small { padding: 8px 10px; }
+.upload-picker.small strong { font-size: 11px; }
+.upload-picker.small small { font-size: 9px; }
+.compact-upload-zone { margin: 8px 0; }
+.material-list.compact { margin-top: 6px; }
+.material-list.compact .material-row { padding: 4px 0; font-size: 11px; }
 .material-list { display: grid; gap: 6px; max-height: 180px; overflow: auto; margin: 10px 0; }
 .material-row { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
 .material-row strong { display: block; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
