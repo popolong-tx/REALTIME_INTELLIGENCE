@@ -66,7 +66,7 @@ class IntelligencePdfService:
         },
         "sanctions-news": {
             "title": "制裁与负面新闻审查报告",
-            "subtitle": "KYC/CDD 合规审查公共信息线索",
+            "subtitle": "合规审查公共信息线索",
             "prefix": "sanctions-news",
         },
         "market-funding": {

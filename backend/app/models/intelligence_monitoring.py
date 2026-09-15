@@ -137,3 +137,22 @@ class IntelligenceAnalysisRecord(Base):
     query_context = Column(JSON, nullable=False, default=dict)
     result = Column(JSON, nullable=False)
     created_at = Column(DateTime, nullable=False, default=utcnow_naive, index=True)
+
+
+class IntelligenceMaterial(Base):
+    """A third-party source attached to exactly one isolated research session."""
+
+    __tablename__ = "intelligence_materials"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    session_id = Column(String, nullable=False, index=True)
+    workspace_id = Column(String, nullable=False, index=True)
+    filename = Column(String, nullable=False)
+    content_type = Column(String, nullable=False)
+    byte_size = Column(Integer, nullable=False)
+    sha256 = Column(String, nullable=False)
+    storage_path = Column(Text, nullable=False)
+    extracted_text = Column(Text)
+    extraction_status = Column(String, nullable=False, default="pending")
+    extraction_error = Column(Text)
+    created_at = Column(DateTime, nullable=False, default=utcnow_naive, index=True)

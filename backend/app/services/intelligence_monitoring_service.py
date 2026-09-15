@@ -131,8 +131,16 @@ class IntelligenceMonitoringService:
             query = query.filter(IntelligenceMonitor.monitor_type == monitor_type)
         return query.order_by(IntelligenceMonitor.created_at.desc()).all()
 
-    def get_monitor(self, db: Session, monitor_id: str) -> IntelligenceMonitor:
-        monitor = db.query(IntelligenceMonitor).filter(IntelligenceMonitor.id == monitor_id).first()
+    def get_monitor(
+        self,
+        db: Session,
+        monitor_id: str,
+        workspace_id: Optional[str] = None,
+    ) -> IntelligenceMonitor:
+        query = db.query(IntelligenceMonitor).filter(IntelligenceMonitor.id == monitor_id)
+        if workspace_id is not None:
+            query = query.filter(IntelligenceMonitor.workspace_id == workspace_id)
+        monitor = query.first()
         if not monitor:
             raise MonitorNotFoundError(monitor_id)
         return monitor
@@ -168,6 +176,7 @@ class IntelligenceMonitoringService:
         self,
         db: Session,
         monitor_id: str,
+        workspace_id: Optional[str] = None,
         *,
         name: Optional[str] = None,
         schedule_minutes: Optional[int] = None,
@@ -204,16 +213,25 @@ class IntelligenceMonitoringService:
         monitor_id: str,
         limit: int = 20,
     ) -> List[IntelligenceMonitorRun]:
-        self.get_monitor(db, monitor_id)
+        self.get_monitor(db, monitor_id, workspace_id=workspace_id)
         return (
             db.query(IntelligenceMonitorRun)
-            .filter(IntelligenceMonitorRun.monitor_id == monitor_id)
+            .join(IntelligenceMonitor)
+            .filter(
+                IntelligenceMonitorRun.monitor_id == monitor_id,
+                *([IntelligenceMonitor.workspace_id == workspace_id] if workspace_id else []),
+            )
             .order_by(IntelligenceMonitorRun.started_at.desc())
             .limit(limit)
             .all()
         )
 
-    async def execute_monitor(self, monitor_id: str, trigger: str = "manual") -> Dict[str, Any]:
+    async def execute_monitor(
+        self,
+        monitor_id: str,
+        trigger: str = "manual",
+        workspace_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         async with self._state_lock:
             if monitor_id in self._running_ids:
                 raise MonitorAlreadyRunningError(monitor_id)
@@ -222,7 +240,7 @@ class IntelligenceMonitoringService:
         run_id: Optional[str] = None
         try:
             with SessionLocal() as db:
-                monitor = self.get_monitor(db, monitor_id)
+                monitor = self.get_monitor(db, monitor_id, workspace_id=workspace_id)
                 if trigger == "schedule" and not monitor.is_active:
                     return {"skipped": True, "reason": "monitor_paused"}
                 run = IntelligenceMonitorRun(

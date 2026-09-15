@@ -11,7 +11,7 @@
 - 🔍 **实时信息检索** — X Search + Web Search + Code Interpreter 多源检索
 - 🎯 **项目风险情报** — 政治/社会/债务/环境/声誉五维实时风险扫描
 - 🌍 **地缘融资推演** — 基准/压力/机会三情景因果链推理
-- ⚖️ **制裁与负面新闻** — KYC/CDD 合规审查公共信息线索
+- ⚖️ **制裁与负面新闻** — 合规审查公共信息线索
 - 📈 **市场与资金环境** — 利率/汇率/信用利差/商品价格/融资条件研究
 - 🤖 **研究与数据 Agent** — 连接白名单 SQL、知识库与计算工具生成可核验分析
 - 📄 **PDF 报告导出** — 所有情报结果可导出带引用的审计级 PDF
@@ -74,7 +74,7 @@ REALTIME_INTELLIGENCE/
 | `POST /api/v1/intelligence/realtime/search` | 00 实时信息检索 | X + 公共网页多源检索 |
 | `POST /api/v1/intelligence/project-risk/analyze` | 01 项目风险情报 | 五维风险扫描 |
 | `POST /api/v1/intelligence/geopolitical-impact/analyze` | 02 地缘融资推演 | 多情景因果推理 |
-| `POST /api/v1/intelligence/sanctions-news/analyze` | 03 制裁与负面新闻 | KYC/CDD 合规审查 |
+| `POST /api/v1/intelligence/sanctions-news/analyze` | 03 制裁与负面新闻 | 合规审查 |
 | `POST /api/v1/intelligence/market-funding/analyze` | 04 市场与资金环境 | 利率/汇率/融资条件 |
 | `POST /api/v1/intelligence/research-agent/run` | 05 研究与数据 Agent | 可核验数据分析 |
 

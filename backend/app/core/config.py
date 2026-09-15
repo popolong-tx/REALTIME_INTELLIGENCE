@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # the renderer discovers common system fonts and falls back to STSong.
     PDF_FONT_PATH: Optional[str] = None
     INTELLIGENCE_REPORTS_DIR: str = os.path.join(BASE_DIR, "data", "intelligence_reports")
+    INTELLIGENCE_MATERIALS_DIR: str = os.path.join(BASE_DIR, "data", "intelligence_materials")
+    INTELLIGENCE_MATERIAL_MAX_BYTES: int = 25 * 1024 * 1024
+    INTELLIGENCE_MATERIAL_MAX_COUNT: int = 30
 
     # Legacy direct-xAI settings. New real-time research must use the OCI
     # Responses API above; these names remain for backward compatibility.

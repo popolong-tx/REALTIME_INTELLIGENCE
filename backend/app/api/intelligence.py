@@ -6,7 +6,7 @@ import json
 from typing import Any, Dict, List, Literal, Optional
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -30,6 +30,11 @@ from app.services.intelligence_history_service import (
     HistoryRecordNotFoundError,
     SUPPORTED_HISTORY_WORKFLOWS,
     intelligence_history_service,
+)
+from app.services.intelligence_material_service import (
+    MaterialNotFoundError,
+    MaterialValidationError,
+    intelligence_material_service,
 )
 
 
@@ -105,17 +110,25 @@ class IntelligencePdfExportRequest(BaseModel):
     query_context: Dict[str, Any] = Field(default_factory=dict)
 
 
+class MaterialAnalysisRequest(BaseModel):
+    question: str = Field(min_length=2, max_length=2000)
+    model_id: Optional[str] = Field(default=None, max_length=100)
+    external_processing_consent: bool = Field(
+        ..., description="明确允许把当前会话资料发送至已配置的 OCI/Grok 服务"
+    )
+
+
 HistoryWorkflow = Literal["realtime-research", "project-risk", "geopolitical-impact", "sanctions-news", "market-funding", "research-agent"]
 
 
 # ── 投资平台 五类场景：制裁与负面新闻 ──────────────────────────────────────
 class SanctionsNewsRequest(BaseModel):
-    """制裁与负面新闻补充 — 为 KYC/CDD 与合作方审查提供公共信息线索。"""
+    """制裁与负面新闻补充 — 为合作方审查提供公共信息线索"""
     entity_name: str = Field(min_length=2, max_length=200, description="审查对象名称（公司/个人/项目）")
     entity_type: Literal["company", "individual", "project", "government"] = "company"
     jurisdictions: List[str] = Field(default_factory=list, max_length=10, description="相关司法管辖区")
-    risk_focus: List[Literal["sanctions", " adverse_media", "litigation", "regulatory", "beneficial_ownership"]] = Field(
-        default_factory=lambda: ["sanctions", " adverse_media", "litigation"]
+    risk_focus: List[Literal["sanctions", "adverse_media", "litigation", "regulatory", "beneficial_ownership"]] = Field(
+        default_factory=lambda: ["sanctions", "adverse_media", "litigation"]
     )
     window_days: int = Field(default=30, ge=1, le=90)
     additional_context: Optional[str] = Field(default=None, max_length=1000)
@@ -207,6 +220,92 @@ async def get_intelligence_capabilities():
     return capabilities
 
 
+@router.post("/materials/sessions")
+async def create_material_session(
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
+):
+    return intelligence_material_service.create_session(workspace_id)
+
+
+@router.post("/materials/sessions/{session_id}/upload")
+async def upload_material(
+    session_id: str,
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    try:
+        material = await intelligence_material_service.ingest(
+            db, session_id=session_id, workspace_id=workspace_id, upload=file
+        )
+    except MaterialValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return intelligence_material_service.serialize(material)
+
+
+@router.get("/materials/sessions/{session_id}")
+async def list_materials(
+    session_id: str,
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
+    db: Session = Depends(get_db),
+):
+    materials = intelligence_material_service.list_materials(
+        db, session_id=session_id, workspace_id=workspace_id
+    )
+    return {
+        "session_id": session_id,
+        "workspace_id": workspace_id,
+        "items": [intelligence_material_service.serialize(item) for item in materials],
+        "isolation": "session_scoped",
+    }
+
+
+@router.post("/materials/sessions/{session_id}/analyze")
+async def analyze_material_session(
+    session_id: str,
+    request: MaterialAnalysisRequest,
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
+    db: Session = Depends(get_db),
+):
+    if not request.external_processing_consent:
+        raise HTTPException(status_code=428, detail="联合分析前必须明确允许将当前会话资料发送至 OCI/Grok")
+    materials = intelligence_material_service.list_materials(
+        db, session_id=session_id, workspace_id=workspace_id
+    )
+    if not materials:
+        raise HTTPException(status_code=422, detail="当前研究会话没有可分析的资料")
+    text_inputs, image_inputs = intelligence_material_service.analysis_inputs(
+        db, session_id=session_id, workspace_id=workspace_id
+    )
+    result = await institutional_intelligence_service.analyze_materials(
+        question=request.question,
+        text_inputs=text_inputs,
+        image_inputs=image_inputs,
+        model_id=request.model_id,
+    )
+    result.setdefault("audit", {}).update({
+        "workspace_id": workspace_id,
+        "session_id": session_id,
+        "material_ids": [item.id for item in materials],
+        "source_scope": "session_materials_only",
+        "external_processing_consent": True,
+    })
+    await audit_trail_service.log_event(
+        event_type=AuditEventType.DATA_ACCESS,
+        user_id=workspace_id,
+        resource_type="intelligence_material_session",
+        resource_id=session_id,
+        action="analyze_uploaded_materials",
+        details={
+            "material_ids": [item.id for item in materials],
+            "material_count": len(materials),
+            "external_processing_consent": True,
+            "source_scope": "session_materials_only",
+        },
+    )
+    return result
+
+
 @router.get("/monitors")
 async def list_intelligence_monitors(
     workspace_id: str = "personal",
@@ -251,12 +350,14 @@ async def create_intelligence_monitor(
 async def update_intelligence_monitor(
     monitor_id: str,
     request: IntelligenceMonitorUpdate,
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
     db: Session = Depends(get_db),
 ):
     try:
         monitor = intelligence_monitoring_service.update_monitor(
             db,
             monitor_id,
+            workspace_id=workspace_id,
             name=request.name,
             schedule_minutes=request.schedule_minutes,
             is_active=request.is_active,
@@ -269,19 +370,31 @@ async def update_intelligence_monitor(
 @router.delete("/monitors/{monitor_id}")
 async def delete_intelligence_monitor(
     monitor_id: str,
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
     db: Session = Depends(get_db),
 ):
     try:
-        intelligence_monitoring_service.delete_monitor(db, monitor_id)
+        monitor = intelligence_monitoring_service.get_monitor(
+            db, monitor_id, workspace_id=workspace_id
+        )
+        intelligence_monitoring_service.delete_monitor(db, monitor.id)
     except MonitorNotFoundError as exc:
         raise HTTPException(status_code=404, detail="监控任务不存在") from exc
     return {"deleted": monitor_id}
 
 
 @router.post("/monitors/{monitor_id}/run")
-async def run_intelligence_monitor_now(monitor_id: str):
+async def run_intelligence_monitor_now(
+    monitor_id: str,
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
+    db: Session = Depends(get_db),
+):
     try:
-        return await intelligence_monitoring_service.execute_monitor(monitor_id, trigger="manual")
+        return await intelligence_monitoring_service.execute_monitor(
+            monitor_id,
+            trigger="manual",
+            workspace_id=workspace_id,
+        )
     except MonitorNotFoundError as exc:
         raise HTTPException(status_code=404, detail="监控任务不存在") from exc
     except MonitorAlreadyRunningError as exc:
@@ -293,11 +406,14 @@ async def run_intelligence_monitor_now(monitor_id: str):
 @router.get("/monitors/{monitor_id}/runs")
 async def list_intelligence_monitor_runs(
     monitor_id: str,
+    workspace_id: str = Query(default="personal", min_length=1, max_length=80),
     limit: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
     try:
-        runs = intelligence_monitoring_service.list_runs(db, monitor_id, limit=limit)
+        runs = intelligence_monitoring_service.list_runs(
+            db, monitor_id, workspace_id=workspace_id, limit=limit
+        )
     except MonitorNotFoundError as exc:
         raise HTTPException(status_code=404, detail="监控任务不存在") from exc
     return {"items": [intelligence_monitoring_service.serialize_run(item, db) for item in runs]}
@@ -531,7 +647,7 @@ async def analyze_sanctions_news(
     request: SanctionsNewsRequest,
     db: Session = Depends(get_db),
 ):
-    """制裁与负面新闻补充 — KYC/CDD 审查公共信息线索。"""
+    """制裁与负面新闻补充 — 审查公共信息线索。"""
     try:
         result = await institutional_intelligence_service.analyze_sanctions_news(
             request.model_dump(mode="json")

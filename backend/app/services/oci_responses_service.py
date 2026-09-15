@@ -150,6 +150,59 @@ class OCIResponsesService:
         cache.set(cache_key, result, expire=900 if tools else 3600)
         return result
 
+    async def generate_multimodal(
+        self,
+        prompt: str,
+        images: List[Dict[str, str]],
+        system_prompt: Optional[str] = None,
+        model_id: Optional[str] = None,
+        max_tokens: int = 5000,
+    ) -> Dict[str, Any]:
+        """Analyze confidential uploaded images without putting them in cache."""
+        if not self.api_key:
+            raise RuntimeError("OCI Generative AI API key is not configured; set OCI_GENAI_API_KEY")
+        selected_model = model_id or self.model_id
+        content: List[Dict[str, Any]] = [{"type": "input_text", "text": prompt}]
+        content.extend({"type": "input_image", "image_url": image["data_url"]} for image in images)
+        body: Dict[str, Any] = {
+            "model": selected_model,
+            "input": [{"role": "user", "content": content}],
+            "max_output_tokens": max_tokens,
+        }
+        if system_prompt:
+            body["instructions"] = system_prompt
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.endpoint,
+                    json=body,
+                    headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                    timeout=90.0,
+                )
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("OCI Responses API timeout") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"OCI Responses API network error: {exc}") from exc
+        if response.status_code != 200:
+            raise OCIResponsesError(response.status_code, self._safe_error_detail(response))
+        raw = response.json()
+        text = self._extract_output_text(raw)
+        result = dict(raw)
+        result["output_text"] = text
+        result["inferenceResponse"] = {"text": text}
+        result["citations"] = self._extract_citations(raw)
+        result["metadata"] = {
+            "provider": "oci-generative-ai",
+            "model_id": selected_model,
+            "region": self.region,
+            "generated_at": datetime.utcnow().isoformat(),
+            "request_id": response.headers.get("opc-request-id") or response.headers.get("x-request-id"),
+            "tools": [],
+            "multimodal": True,
+            "cache": "disabled_for_uploaded_materials",
+        }
+        return result
+
     async def generate_realtime_research(
         self,
         prompt: str,

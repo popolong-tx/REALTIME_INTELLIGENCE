@@ -347,7 +347,7 @@ class InstitutionalIntelligenceService:
     # ── 场景 03：制裁与负面新闻 ────────────────────────────────────
 
     async def analyze_sanctions_news(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """制裁与负面新闻补充 — 为 KYC/CDD 与合作方审查提供公共信息线索。"""
+        """制裁与负面新闻补充 — 为合作方审查提供公共信息线索"""
         if not self.configured:
             return self._configuration_required(
                 workflow="sanctions-news",
