@@ -1070,6 +1070,9 @@
     'realtime-research': { stateKey: 'realtimeResearch', button: '#export-realtime-pdf', label: '实时信息检索' },
     'project-risk': { stateKey: 'projectRisk', button: '#export-project-risk-pdf', label: '项目风险情报' },
     'geopolitical-impact': { stateKey: 'geopoliticalImpact', button: '#export-geo-pdf', label: '地缘融资推演' },
+    'sanctions-news': { stateKey: 'sanctionsNews', button: '#export-sanctions-pdf', label: '制裁与负面新闻' },
+    'market-funding': { stateKey: 'marketFunding', button: '#export-market-pdf', label: '市场与资金环境' },
+    'research-agent': { stateKey: 'researchAgent', button: '#export-agent-pdf', label: '研究与数据 Agent' },
   };
 
   const INTELLIGENCE_HISTORY_META = {
@@ -1192,7 +1195,11 @@
   function intelligencePdfContext(workflow) {
     if (workflow === 'realtime-research') return realtimeResearchPayload();
     if (workflow === 'project-risk') return projectRiskPayload();
-    return geopoliticalPayload();
+    if (workflow === 'geopolitical-impact') return geopoliticalPayload();
+    if (workflow === 'sanctions-news') return sanctionsPayload();
+    if (workflow === 'market-funding') return marketPayload();
+    if (workflow === 'research-agent') return agentPayload();
+    return {};
   }
 
   function updateIntelligencePdfButton(workflow, result) {
@@ -1338,7 +1345,8 @@
       if (button) {
         button.innerHTML = original;
         button.disabled = false;
-        if (button.matches('.intelligence-pdf-button')) updateIntelligencePdfButton(workflow, state[INTELLIGENCE_PDF_META[workflow].stateKey]);
+        const meta2 = INTELLIGENCE_PDF_META[workflow];
+        if (meta2 && button.matches('.intelligence-pdf-button')) updateIntelligencePdfButton(workflow, state[meta2.stateKey]);
       }
     }
   }
