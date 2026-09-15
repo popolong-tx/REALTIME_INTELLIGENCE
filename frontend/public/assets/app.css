@@ -177,13 +177,14 @@ main { width: 100%; max-width: 1600px; min-height: calc(100vh - 67px); padding: 
 .material-isolation-note { margin: 6px 0 11px; color: var(--subtle); font-size: 11px; }
 .upload-picker { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px dashed #9ecdb2; border-radius: 9px; color: var(--green-deep); background: var(--white); cursor: pointer; }
 .upload-picker:hover { border-color: var(--green); background: #f1faf4; }
-.upload-picker input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.upload-picker input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 .upload-picker strong { display: block; font-size: 12px; }
 .upload-picker small { margin-top: 3px; color: var(--subtle); font-size: 10px; font-weight: 400; }
-.upload-picker.small { padding: 8px 10px; }
-.upload-picker.small strong { font-size: 11px; }
-.upload-picker.small small { font-size: 9px; }
-.compact-upload-zone { margin: 8px 0; }
+.compact-upload-zone { margin-top: 13px; }
+.compact-upload-zone .field-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+.compact-upload-zone .upload-hint { color: var(--subtle); font-size: 10px; margin-top: 4px; }
+.material-list.compact { margin-top: 6px; }
+.material-list.compact .material-row { padding: 4px 0; font-size: 11px; display: flex; align-items: center; gap: 6px; color: var(--muted); }
 .material-list.compact { margin-top: 6px; }
 .material-list.compact .material-row { padding: 4px 0; font-size: 11px; }
 .material-list { display: grid; gap: 6px; max-height: 180px; overflow: auto; margin: 10px 0; }

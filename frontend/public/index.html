@@ -139,7 +139,11 @@
                 <fieldset class="focus-field"><legend>风险维度</legend><label><input type="checkbox" name="project-risk-focus" value="political" checked><span>政治政策</span></label><label><input type="checkbox" name="project-risk-focus" value="social" checked><span>社会社区</span></label><label><input type="checkbox" name="project-risk-focus" value="debt" checked><span>债务偿付</span></label><label><input type="checkbox" name="project-risk-focus" value="environment" checked><span>环境许可</span></label><label><input type="checkbox" name="project-risk-focus" value="reputation" checked><span>声誉风险</span></label></fieldset>
                 <label class="field-label">本次决策问题<textarea id="project-question" rows="3" maxlength="1000" placeholder="例如：是否需要调整贷款条款、暂停复核或加速推进？"></textarea></label>
                 <label class="field-label">推理模型<select id="project-risk-model"><option value="">默认模型</option></select></label>
-                <div class="compact-upload-zone"><label class="upload-picker small"><input id="project-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp"><span><strong>上传参考文档</strong><small>PDF / Word / 文本 / 图片，可与检索结果联合分析</small></span></label><div id="project-material-list" class="material-list compact"></div></div>
+                <div class="compact-upload-zone">
+                  <label class="field-label">参考文档（可选）<input id="project-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp" style="margin-top:6px;font-size:12px;font-weight:400;color:var(--ink)"></label>
+                  <p class="upload-hint">支持 PDF / Word / 文本 / 图片，上传后与检索结果联合分析</p>
+                  <div id="project-material-list" class="material-list compact"></div>
+                </div>
                 <button class="button primary full" id="run-project-risk" type="submit"><svg><use href="#i-radar"/></svg>运行 Grok 风险扫描</button>
                 <div class="schedule-builder"><label class="field-label">定时监控间隔<select id="project-monitor-interval"><option value="30">每 30 分钟</option><option value="60" selected>每 1 小时</option><option value="120">每 2 小时</option><option value="240">每 4 小时</option><option value="360">每 6 小时</option><option value="480">每 8 小时</option><option value="720">每 12 小时</option><option value="1440">每 24 小时</option></select></label><button class="button ghost full" id="save-project-monitor" type="button"><svg><use href="#i-bell"/></svg>保存定时监控</button><small class="auto-report-note">每次真实风险扫描成功后自动保存 PDF 报告</small></div>
                 <small class="form-hint">输出只进入人工复核，不会自动调整、暂停或批准融资。</small>
@@ -170,7 +174,11 @@
                 <label class="field-label">实时证据窗口<select id="geo-window"><option value="7">过去 7 天</option><option value="30" selected>过去 30 天</option><option value="90">过去 90 天</option></select></label>
                 <label class="field-label">管理层决策问题<textarea id="geo-question" rows="3" maxlength="1200" placeholder="例如：应如何调整国别策略、联合融资伙伴与产品结构？"></textarea></label>
                 <label class="field-label">推理模型<select id="geo-model"><option value="">默认模型</option></select></label>
-                <div class="compact-upload-zone"><label class="upload-picker small"><input id="geo-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp"><span><strong>上传参考文档</strong><small>PDF / Word / 文本 / 图片，可与检索结果联合分析</small></span></label><div id="geo-material-list" class="material-list compact"></div></div>
+                <div class="compact-upload-zone">
+                  <label class="field-label">参考文档（可选）<input id="geo-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp" style="margin-top:6px;font-size:12px;font-weight:400;color:var(--ink)"></label>
+                  <p class="upload-hint">支持 PDF / Word / 文本 / 图片，上传后与检索结果联合分析</p>
+                  <div id="geo-material-list" class="material-list compact"></div>
+                </div>
                 <button class="button primary full" id="run-geo-analysis" type="submit"><svg><use href="#i-globe"/></svg>运行多情景推演</button>
                 <small class="form-hint">模型会明确区分已引用观察、推理假设和未知项。</small>
               </form>
@@ -200,7 +208,11 @@
                 <label class="field-label">审查窗口<select id="sanctions-window"><option value="7">过去 7 天</option><option value="30" selected>过去 30 天</option><option value="90">过去 90 天</option></select></label>
                 <label class="field-label">补充背景<textarea id="sanctions-context" rows="2" maxlength="1000" placeholder="例如：正在评估作为联合融资合作方的资格"></textarea></label>
                 <label class="field-label">推理模型<select id="sanctions-model"><option value="">默认模型</option></select></label>
-                <div class="compact-upload-zone"><label class="upload-picker small"><input id="sanctions-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp"><span><strong>上传参考文档</strong><small>PDF / Word / 文本 / 图片，可与检索结果联合分析</small></span></label><div id="sanctions-material-list" class="material-list compact"></div></div>
+                <div class="compact-upload-zone">
+                  <label class="field-label">参考文档（可选）<input id="sanctions-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp" style="margin-top:6px;font-size:12px;font-weight:400;color:var(--ink)"></label>
+                  <p class="upload-hint">支持 PDF / Word / 文本 / 图片，上传后与检索结果联合分析</p>
+                  <div id="sanctions-material-list" class="material-list compact"></div>
+                </div>
                 <button class="button primary full" id="run-sanctions" type="submit"><svg><use href="#i-shield"/></svg>运行合规审查</button>
               </form>
               <div class="analysis-history-section"><div class="drawer-section-head"><div><p class="section-kicker">ANALYSIS HISTORY</p><h3>审查历史</h3></div><div class="history-head-actions"><span class="count-badge" id="sanctions-history-count">0</span><button class="text-button" type="button" data-history-refresh="sanctions-news">刷新</button></div></div><div id="sanctions-history-list" class="analysis-history-list"><div class="loading-state"><span class="spinner"></span>加载历史记录</div></div></div>
@@ -227,7 +239,11 @@
                 <label class="field-label">证据窗口<select id="market-window"><option value="7">过去 7 天</option><option value="30" selected>过去 30 天</option><option value="90">过去 90 天</option></select></label>
                 <label class="field-label">决策背景<textarea id="market-context" rows="2" maxlength="1200" placeholder="例如：正在评估一笔 5 年期美元计价基础设施贷款的定价"></textarea></label>
                 <label class="field-label">推理模型<select id="market-model"><option value="">默认模型</option></select></label>
-                <div class="compact-upload-zone"><label class="upload-picker small"><input id="market-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp"><span><strong>上传参考文档</strong><small>PDF / Word / 文本 / 图片，可与检索结果联合分析</small></span></label><div id="market-material-list" class="material-list compact"></div></div>
+                <div class="compact-upload-zone">
+                  <label class="field-label">参考文档（可选）<input id="market-material-upload" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp" style="margin-top:6px;font-size:12px;font-weight:400;color:var(--ink)"></label>
+                  <p class="upload-hint">支持 PDF / Word / 文本 / 图片，上传后与检索结果联合分析</p>
+                  <div id="market-material-list" class="material-list compact"></div>
+                </div>
                 <button class="button primary full" id="run-market" type="submit"><svg><use href="#i-chart"/></svg>运行市场分析</button>
               </form>
               <div class="analysis-history-section"><div class="drawer-section-head"><div><p class="section-kicker">ANALYSIS HISTORY</p><h3>分析历史</h3></div><div class="history-head-actions"><span class="count-badge" id="market-history-count">0</span><button class="text-button" type="button" data-history-refresh="market-funding">刷新</button></div></div><div id="market-history-list" class="analysis-history-list"><div class="loading-state"><span class="spinner"></span>加载历史记录</div></div></div>
