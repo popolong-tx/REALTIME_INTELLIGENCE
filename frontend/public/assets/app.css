@@ -182,7 +182,7 @@ main { width: 100%; max-width: 1600px; min-height: calc(100vh - 67px); padding: 
 .upload-picker small { margin-top: 3px; color: var(--subtle); font-size: 10px; font-weight: 400; }
 .compact-upload-zone { margin-top: 13px; }
 .compact-upload-zone .field-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
-.compact-upload-zone .upload-hint { color: var(--subtle); font-size: 10px; margin-top: 4px; }
+.compact-upload-zone .upload-hint { color: var(--subtle); font-size: 10px; line-height: 1.5; margin-top: 4px; }
 .material-list.compact { margin-top: 6px; }
 .material-list.compact .material-row { padding: 4px 0; font-size: 11px; display: flex; align-items: center; gap: 6px; color: var(--muted); }
 .material-list.compact { margin-top: 6px; }
