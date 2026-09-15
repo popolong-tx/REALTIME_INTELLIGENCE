@@ -422,7 +422,7 @@
     if (view === 'lab') loadModels();
     if (view === 'settings') { loadProfile(); loadGovernance(); loadPlatformManifest(); }
     if (view === 'portfolio') renderPlans();
-    if (view === 'realtime-research' || view === 'project-risk' || view === 'geopolitics' || view === 'sanctions-news' || view === 'market-funding' || view === 'research-agent') loadIntelligenceCapabilities();
+    if (view === 'realtime-research' || view === 'project-risk' || view === 'geopolitics' || view === 'sanctions-news' || view === 'market-funding') loadIntelligenceCapabilities();
     if (view === 'realtime-research') loadIntelligenceMonitors('realtime_research');
     if (view === 'project-risk') loadIntelligenceMonitors('project_risk');
     if (view === 'realtime-research') loadIntelligenceHistory('realtime-research');
@@ -430,7 +430,6 @@
     if (view === 'geopolitics') loadIntelligenceHistory('geopolitical-impact');
     if (view === 'sanctions-news') loadIntelligenceHistory('sanctions-news');
     if (view === 'market-funding') loadIntelligenceHistory('market-funding');
-    if (view === 'research-agent') loadIntelligenceHistory('research-agent');
   }
 
   function openSidebar() {
@@ -1117,7 +1116,6 @@
     'geopolitical-impact': { stateKey: 'geopoliticalImpact', button: '#export-geo-pdf', label: '地缘融资推演' },
     'sanctions-news': { stateKey: 'sanctionsNews', button: '#export-sanctions-pdf', label: '制裁与负面新闻' },
     'market-funding': { stateKey: 'marketFunding', button: '#export-market-pdf', label: '市场与资金环境' },
-    'research-agent': { stateKey: 'researchAgent', button: '#export-agent-pdf', label: '研究与数据 Agent' },
   };
 
   const INTELLIGENCE_HISTORY_META = {
@@ -1126,7 +1124,6 @@
     'geopolitical-impact': { list: '#geo-history-list', count: '#geo-history-count', label: '地缘融资推演', render: renderGeopoliticalResult },
     'sanctions-news': { list: '#sanctions-history-list', count: '#sanctions-history-count', label: '制裁与负面新闻', render: renderSanctionsResult },
     'market-funding': { list: '#market-history-list', count: '#market-history-count', label: '市场与资金环境', render: renderMarketResult },
-    'research-agent': { list: '#agent-history-list', count: '#agent-history-count', label: '研究与数据 Agent', render: renderAgentResult },
   };
 
   function splitList(value) {
@@ -1243,7 +1240,6 @@
     if (workflow === 'geopolitical-impact') return geopoliticalPayload();
     if (workflow === 'sanctions-news') return sanctionsPayload();
     if (workflow === 'market-funding') return marketPayload();
-    if (workflow === 'research-agent') return agentPayload();
     return {};
   }
 
@@ -3035,13 +3031,13 @@
     $('#geo-form')?.addEventListener('submit', runGeopoliticalAnalysis);
     $('#sanctions-form').addEventListener('submit', runSanctionsNews);
     $('#market-form').addEventListener('submit', runMarketFunding);
-    $('#agent-form').addEventListener('submit', runResearchAgent);
+    // research-agent removed
     $('#export-realtime-pdf')?.addEventListener('click', () => downloadIntelligencePdf('realtime-research'));
     $('#export-project-risk-pdf')?.addEventListener('click', () => downloadIntelligencePdf('project-risk'));
     $('#export-geo-pdf')?.addEventListener('click', () => downloadIntelligencePdf('geopolitical-impact'));
     $('#export-sanctions-pdf')?.addEventListener('click', () => downloadIntelligencePdf('sanctions-news'));
     $('#export-market-pdf')?.addEventListener('click', () => downloadIntelligencePdf('market-funding'));
-    $('#export-agent-pdf')?.addEventListener('click', () => downloadIntelligencePdf('research-agent'));
+    // research-agent PDF export removed
     $('#close-wizard')?.addEventListener('click', closeWizard);
     $('#wizard-next')?.addEventListener('click', nextWizardStep);
     $('#wizard-back')?.addEventListener('click', previousWizardStep);

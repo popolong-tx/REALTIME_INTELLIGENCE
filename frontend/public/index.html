@@ -51,7 +51,6 @@
         <button class="nav-item" data-view="geopolitics"><svg><use href="#i-globe"/></svg><span>地缘融资推演</span></button>
         <button class="nav-item" data-view="sanctions-news"><svg><use href="#i-shield"/></svg><span>制裁与负面新闻</span></button>
         <button class="nav-item" data-view="market-funding"><svg><use href="#i-chart"/></svg><span>市场与资金环境</span></button>
-        <button class="nav-item" data-view="research-agent"><svg><use href="#i-lab"/></svg><span>研究与数据 Agent</span></button>
         <p class="nav-kicker">系统</p>
         <button class="nav-item" data-view="settings"><svg><use href="#i-settings"/></svg><span>系统配置</span></button>
       </nav>
@@ -252,31 +251,6 @@
               <article class="panel decision-brief-panel"><div class="panel-head"><div><p class="section-kicker">MARKET READOUT</p><h2>市场环境综述</h2></div><div class="result-toolbar"><div class="result-status"><span class="status-chip neutral" id="market-status">尚未运行</span><small id="market-asof">等待查询</small></div><button class="button ghost intelligence-pdf-button" id="export-market-pdf" type="button" disabled><svg><use href="#i-download"/></svg>导出 PDF</button></div></div><div id="market-summary" class="brief-placeholder"><strong>输入研究主题后运行市场分析</strong><span>将分析利率、汇率、信用利差、商品价格和融资条件。</span></div><div class="audit-ribbon" id="market-audit"><span>MODEL —</span><span>SOURCES 0</span><span>REQUEST —</span></div></article>
               <article class="panel"><div class="panel-head"><div><p class="section-kicker">KEY INDICATORS</p><h2>关键指标</h2></div></div><div id="market-indicators" class="empty-state small"><strong>等待检索结果</strong><span>按利率、汇率、信用利差、商品、融资条件分类展示。</span></div></article>
               <article class="panel source-ledger"><div class="panel-head"><div><p class="section-kicker">SOURCE LEDGER</p><h2>来源账本</h2></div></div><div id="market-sources" class="source-list"><div class="empty-state small"><strong>暂无来源</strong><span>分析完成后显示可访问链接与证据状态。</span></div></div></article>
-            </div>
-          </div>
-        </section>
-
-        <!-- ── 场景 05：研究与数据 Agent ─────────────────────────── -->
-        <section class="view" id="view-research-agent" data-title="研究与数据 Agent">
-          <div class="page-heading compact intelligence-page-heading"><div><p class="eyebrow">RESEARCH & DATA AGENT</p><h1>连接白名单 SQL、知识库与计算工具生成可核验分析。</h1><p>使用代码解释器进行数据处理、统计分析和趋势计算，确保所有结果可复现。</p></div><div class="model-badge"><span class="live-pip"></span><div><strong>Grok 4.3</strong><small>Code Interpreter · Web Search</small></div></div></div>
-          <div class="intelligence-workbench">
-            <aside class="panel intelligence-query-panel">
-              <div class="panel-head"><div><p class="section-kicker">DATA RESEARCH</p><h2>定义分析任务</h2></div><span class="status-chip neutral" id="agent-form-status">待输入</span></div>
-              <form id="agent-form" class="intelligence-form">
-                <label class="field-label">研究问题<textarea id="agent-query" required rows="4" maxlength="2000" placeholder="例如：分析基础设施投资趋势，计算年均增长率和区域分布"></textarea></label>
-                <fieldset class="focus-field"><legend>可用工具</legend><label><input type="checkbox" name="agent-tool" value="web_search" checked><span>Web Search</span></label><label><input type="checkbox" name="agent-tool" value="code_interpreter" checked><span>Code Interpreter</span></label><label><input type="checkbox" name="agent-tool" value="x_search"><span>X Search</span></label><label><input type="checkbox" name="agent-tool" value="knowledge_base"><span>知识库</span></label></fieldset>
-                <label class="check-row compact-check"><input id="agent-calculation" type="checkbox" checked><span>需要计算分析</span></label>
-                <label class="field-label">校验深度<select id="agent-verification"><option value="basic">基础</option><option value="detailed" selected>详细</option><option value="exhaustive">穷尽</option></select></label>
-                <label class="field-label">最大结果数<select id="agent-max"><option value="10">10 条</option><option value="20">20 条</option><option value="30" selected>30 条</option><option value="50">50 条</option></select></label>
-                <label class="field-label">推理模型<select id="agent-model"><option value="">默认模型</option></select></label>
-                <button class="button primary full" id="run-agent" type="submit"><svg><use href="#i-lab"/></svg>运行研究 Agent</button>
-              </form>
-              <div class="analysis-history-section"><div class="drawer-section-head"><div><p class="section-kicker">ANALYSIS HISTORY</p><h3>分析历史</h3></div><div class="history-head-actions"><span class="count-badge" id="agent-history-count">0</span><button class="text-button" type="button" data-history-refresh="research-agent">刷新</button></div></div><div id="agent-history-list" class="analysis-history-list"><div class="loading-state"><span class="spinner"></span>加载历史记录</div></div></div>
-            </aside>
-            <div class="intelligence-output">
-              <article class="panel decision-brief-panel"><div class="panel-head"><div><p class="section-kicker">RESEARCH OUTPUT</p><h2>研究结论</h2></div><div class="result-toolbar"><div class="result-status"><span class="status-chip neutral" id="agent-status">尚未运行</span><small id="agent-asof">等待执行</small></div><button class="button ghost intelligence-pdf-button" id="export-agent-pdf" type="button" disabled><svg><use href="#i-download"/></svg>导出 PDF</button></div></div><div id="agent-summary" class="brief-placeholder"><strong>输入研究问题后运行数据 Agent</strong><span>将使用代码解释器进行数据处理、统计分析和趋势计算。</span></div><div class="audit-ribbon" id="agent-audit"><span>MODEL —</span><span>SOURCES 0</span><span>REQUEST —</span></div></article>
-              <article class="panel"><div class="panel-head"><div><p class="section-kicker">COMPUTATION</p><h2>计算结果</h2></div></div><div id="agent-computation" class="empty-state small"><strong>等待执行</strong><span>计算步骤和结果将在此展示，确保可复现。</span></div></article>
-              <article class="panel source-ledger"><div class="panel-head"><div><p class="section-kicker">SOURCE LEDGER</p><h2>来源与验证</h2></div></div><div id="agent-sources" class="source-list"><div class="empty-state small"><strong>暂无来源</strong><span>执行完成后显示数据来源与交叉验证结果。</span></div></div></article>
             </div>
           </div>
         </section>
