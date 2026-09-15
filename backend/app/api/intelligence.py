@@ -138,7 +138,7 @@ class SanctionsNewsRequest(BaseModel):
 
 # ── 投资平台 五类场景：市场与资金环境 ──────────────────────────────────────
 class MarketFundingRequest(BaseModel):
-    """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
+    """市场与资金环境 — 利率、汇率、商品价格和融资条件研究"""
     topic: str = Field(min_length=4, max_length=1200, description="研究主题（如：东南亚基建融资环境、美元利率走势）")
     regions: List[str] = Field(default_factory=list, max_length=12)
     indicators: List[Literal["interest_rate", "exchange_rate", "commodity", "credit_spread", "bond_yield", "funding_condition"]] = Field(
@@ -668,7 +668,7 @@ async def analyze_market_funding(
     request: MarketFundingRequest,
     db: Session = Depends(get_db),
 ):
-    """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
+    """市场与资金环境 — 利率、汇率、商品价格和融资条件研究"""
     try:
         result = await institutional_intelligence_service.analyze_market_funding(
             request.model_dump(mode="json")

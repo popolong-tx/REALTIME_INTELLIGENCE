@@ -385,7 +385,7 @@ class InstitutionalIntelligenceService:
     # ── 场景 04：市场与资金环境 ────────────────────────────────────
 
     async def analyze_market_funding(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """市场与资金环境 — 利率、汇率、商品价格和融资条件研究。"""
+        """市场与资金环境 — 利率、汇率、商品价格和融资条件研究"""
         if not self.configured:
             return self._configuration_required(
                 workflow="market-funding",
