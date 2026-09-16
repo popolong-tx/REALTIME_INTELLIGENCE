@@ -784,7 +784,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .model-badge strong { display: block; font-size: 12px; }
 .model-badge small { margin-top: 2px; color: var(--subtle); font-size: 10px; }
 .intelligence-workbench { display: grid; grid-template-columns: 330px minmax(0, 1fr); align-items: start; gap: 18px; }
-.intelligence-query-panel { position: sticky; top: 86px; padding: 21px; }
+.intelligence-query-panel { position: sticky; top: 86px; padding: 21px; overflow: hidden; }
 .intelligence-form { display: grid; gap: 14px; margin-top: 15px; }
 .focus-field { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding: 0; margin: 0; border: 0; }
 .focus-field legend { grid-column: 1 / -1; padding: 0; margin-bottom: 2px; color: var(--muted); font-size: 12px; font-weight: 600; }
