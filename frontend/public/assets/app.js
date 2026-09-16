@@ -2165,9 +2165,10 @@
 
   function renderAlerts() {
     const list = $('#alert-list');
+    if (!list) return;
     const active = state.alerts.filter((item) => item.status !== 'paused').length;
-    $('#alert-count').textContent = state.alerts.length;
-    $('#notification-pip').classList.toggle('hidden', active === 0);
+    const ac = $('#alert-count'); if (ac) ac.textContent = state.alerts.length;
+    $('#notification-pip')?.classList.toggle('hidden', active === 0);
     if (!state.alerts.length) {
       list.innerHTML = '<div class="empty-state small"><strong>还没有预警规则</strong><span>为单一证券或整个关注列表设置价格、波动、重大事件或计划复核条件。</span></div>';
       return;
@@ -2185,7 +2186,7 @@
     const scope = $('#alert-scope').value;
     const condition = $('#alert-condition').value;
     const symbol = normalizeSymbol($('#alert-symbol')?.value || state.symbol);
-    const thresholdText = $('#alert-threshold').value.trim();
+    const thresholdText = ($('#alert-threshold')?.value || '').trim();
     const threshold = Number(thresholdText);
     if (scope === 'symbol' && !validSymbol(symbol)) { toast('请输入有效证券代码', '例如 AAPL、0700.HK 或 600519.SH', 'error'); return; }
     if (scope === 'watchlist' && !state.watchlist.length) { toast('关注列表为空', '请先添加至少一个证券', 'error'); return; }
