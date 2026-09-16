@@ -2734,10 +2734,10 @@
     $('#brand-preview-name').textContent = brand.name;
     $('#brand-preview-subtitle').textContent = brand.subtitle.toUpperCase();
     $('#brand-preview-mark').textContent = brand.mark;
-    $('#platform-brand-name').value = brand.name;
-    $('#platform-brand-subtitle').value = brand.subtitle;
-    $('#platform-brand-mark').value = brand.mark;
-    $('#platform-brand-theme').value = brand.theme;
+    const pbn = $('#platform-brand-name'); if (pbn) pbn.value = brand.name;
+    const pbs = $('#platform-brand-subtitle'); if (pbs) pbs.value = brand.subtitle;
+    const pbm = $('#platform-brand-mark'); if (pbm) pbm.value = brand.mark;
+    const pbt = $('#platform-brand-theme'); if (pbt) pbt.value = brand.theme;
     document.title = `${$(`#view-${state.view}`)?.dataset.title || '今日'} · ${brand.name}`;
   }
 
@@ -2883,10 +2883,10 @@
 
   function saveBrandConfig() {
     const brand = {
-      name: $('#platform-brand-name').value.trim() || DEFAULT_BRAND.name,
-      subtitle: $('#platform-brand-subtitle').value.trim() || DEFAULT_BRAND.subtitle,
-      mark: $('#platform-brand-mark').value.trim() || DEFAULT_BRAND.mark,
-      theme: $('#platform-brand-theme').value,
+      name: ($('#platform-brand-name')?.value || '').trim() || DEFAULT_BRAND.name,
+      subtitle: ($('#platform-brand-subtitle')?.value || '').trim() || DEFAULT_BRAND.subtitle,
+      mark: ($('#platform-brand-mark')?.value || '').trim() || DEFAULT_BRAND.mark,
+      theme: $('#platform-brand-theme')?.value || DEFAULT_BRAND.theme,
     };
     applyBrandConfig(brand);
     writeStorage('nexus-brand', state.brand);
