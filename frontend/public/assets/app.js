@@ -3044,8 +3044,8 @@
       state.materialSessionId = '';
       state.materials = [];
       renderMaterials();
-      $('#material-question').value = '';
-      $('#material-consent').checked = false;
+      const mq = $('#material-question'); if (mq) mq.value = '';
+      const mc = $('#material-consent'); if (mc) mc.checked = false;
       toast('已新建资料集', '后续上传的文件不会与之前的资料混合');
     });
     $$('.query-template').forEach((button) => button.addEventListener('click', () => {
