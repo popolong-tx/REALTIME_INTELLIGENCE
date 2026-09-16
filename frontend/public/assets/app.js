@@ -2677,6 +2677,7 @@
 
   async function checkBroker() {
     const summary = $('#broker-summary');
+    if (!summary) return;
     summary.textContent = '正在检查服务状态';
     try {
       const data = await api('/api/v1/broker/brokers');
