@@ -2258,9 +2258,9 @@
       const circle = item.querySelector(':scope > span');
       if (circle) circle.innerHTML = step < state.wizardStep ? '<svg><use href="#i-check"/></svg>' : String(step);
     });
-    $('#wizard-title').textContent = `第 ${state.wizardStep} 步 · ${WIZARD_TITLES[state.wizardStep - 1]}`;
-    $('#wizard-back').disabled = state.wizardStep === 1;
-    $('#wizard-next').textContent = NEXT_LABELS[state.wizardStep - 1];
+    const wt = $('#wizard-title'); if (wt) wt.textContent = `第 ${state.wizardStep} 步 · ${WIZARD_TITLES[state.wizardStep - 1]}`;
+    const wb = $('#wizard-back'); if (wb) wb.disabled = state.wizardStep === 1;
+    const wn = $('#wizard-next'); if (wn) wn.textContent = NEXT_LABELS[state.wizardStep - 1];
     $('#wizard-message').textContent = '';
     if (state.wizardStep === 2 && !state.evidenceChecked) runPlanEvidence();
     if (state.wizardStep === 5) renderPlanReview();
