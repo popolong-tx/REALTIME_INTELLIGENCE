@@ -2157,9 +2157,10 @@
   }
 
   function updateAlertFields() {
-    const watchlistScope = $('#alert-scope').value === 'watchlist';
-    $('#alert-symbol-field').classList.toggle('hidden', watchlistScope);
-    $('#alert-threshold-field').classList.toggle('hidden', !alertNeedsThreshold($('#alert-condition').value));
+    const watchlistScope = $('#alert-scope')?.value === 'watchlist';
+    $('#alert-symbol-field')?.classList.toggle('hidden', watchlistScope);
+    const needsThreshold = alertNeedsThreshold($('#alert-condition')?.value);
+    $('#alert-threshold-field')?.classList.toggle('hidden', !needsThreshold);
   }
 
   function renderAlerts() {
