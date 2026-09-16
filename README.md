@@ -91,6 +91,7 @@ POST /api/v1/intelligence/export/pdf      # 导出 PDF
 
 - [架构设计](docs/architecture.md) — 系统架构、模块职责、OCI Grok 情报工作流
 - [用户指南](docs/user-guide.md)
+- [变更日志](CHANGELOG.md) — 版本更新记录
 
 ## ⚠️ 当前边界
 
