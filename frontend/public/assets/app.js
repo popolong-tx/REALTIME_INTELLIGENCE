@@ -1225,7 +1225,7 @@
   function populateModelSelectors(models) {
     if (!models.length) return;
     const options = models.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-    ['#intel-model', '#realtime-model', '#project-risk-model', '#geo-model'].forEach((selector) => {
+    ['#intel-model', '#realtime-model', '#project-risk-model', '#geo-model', '#sanctions-model', '#market-model'].forEach((selector) => {
       const el = $(selector);
       if (!el) return;
       const current = el.value;
