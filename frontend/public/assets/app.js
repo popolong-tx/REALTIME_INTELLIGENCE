@@ -795,9 +795,10 @@
     writeStorage('nexus-recent', state.recent);
     renderRecent();
     showView('research');
+    if (!$('#view-research')) return;
     $('#research-symbol').value = symbol;
-    $('#research-empty').classList.add('hidden');
-    $('#research-workbench').classList.remove('hidden');
+    $('#research-empty')?.classList.add('hidden');
+    $('#research-workbench')?.classList.remove('hidden');
     resetResearchUI(symbol);
     addJob(`加载 ${symbol} 证券研究`, '行情、历史、技术与财务数据');
 
@@ -813,6 +814,7 @@
   }
 
   function resetResearchUI(symbol) {
+    if (!$('#view-research')) return;
     $('#security-logo').textContent = symbol.slice(0, 2);
     $('#security-name').textContent = symbol;
     $('#security-symbol').textContent = symbol;
@@ -2225,6 +2227,7 @@
 
   function startPlan(symbol = '') {
     showView('plans');
+    if (!$('#view-plans')) return;
     $('#plan-library').classList.add('hidden');
     $('#plan-wizard').classList.remove('hidden');
     state.wizardStep = 1;
