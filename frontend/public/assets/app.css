@@ -832,6 +832,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .history-actions .text-button { min-height: 28px; font-size: 10px; }
 
 .intelligence-output { min-width: 0; display: grid; gap: 18px; }
+.intelligence-output > .panel { padding: 22px; }
 .decision-brief-panel, .event-ledger-panel, .transmission-panel { padding: 22px; }
 .decision-brief-panel { overflow: hidden; border-color: #cbd9d1; background: linear-gradient(160deg, #fcfefb 0%, #f3f8f4 100%); }
 .geo-brief { border-color: #d8d0e7; background: linear-gradient(160deg, #fdfcfe 0%, #f7f3fb 100%); }
