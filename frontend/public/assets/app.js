@@ -1044,7 +1044,7 @@
       setChip($('#grok-model'), '不可用', 'error');
       setChip($('#intel-quality'), '查询失败', 'error');
       if (!options.silent) toast('Grok 实时查询失败', message, 'error');
-      $('#grok-synthesis').innerHTML = `<div class="empty-state small"><strong>实时查询暂不可用</strong><span>${escapeHtml(message)}</span></div>`;
+      const gs = $('#grok-synthesis'); if (gs) gs.innerHTML = `<div class="empty-state small"><strong>实时查询暂不可用</strong><span>${escapeHtml(message)}</span></div>`;
       return null;
     }
     const model = synthesis?.model || 'OCI Grok';
@@ -2234,14 +2234,14 @@
   function startPlan(symbol = '') {
     showView('plans');
     if (!$('#view-plans')) return;
-    $('#plan-library').classList.add('hidden');
-    $('#plan-wizard').classList.remove('hidden');
+    const pl = $('#plan-library'); if (pl) pl.classList.add('hidden');
+    const pw = $('#plan-wizard'); if (pw) pw.classList.remove('hidden');
     state.wizardStep = 1;
     state.evidenceChecked = false;
     const planSymbol = String(symbol || state.symbol || '').toUpperCase();
-    if (planSymbol) $('#plan-symbol').value = planSymbol;
-    $('#plan-ack').checked = false;
-    $('#wizard-message').textContent = '';
+    if (planSymbol) { const ps = $('#plan-symbol'); if (ps) ps.value = planSymbol; }
+    const ack = $('#plan-ack'); if (ack) ack.checked = false;
+    const wm = $('#wizard-message'); if (wm) wm.textContent = '';
     renderWizardStep();
   }
 
@@ -2263,28 +2263,28 @@
     const wt = $('#wizard-title'); if (wt) wt.textContent = `第 ${state.wizardStep} 步 · ${WIZARD_TITLES[state.wizardStep - 1]}`;
     const wb = $('#wizard-back'); if (wb) wb.disabled = state.wizardStep === 1;
     const wn = $('#wizard-next'); if (wn) wn.textContent = NEXT_LABELS[state.wizardStep - 1];
-    $('#wizard-message').textContent = '';
+    const wm = $('#wizard-message'); if (wm) wm.textContent = '';
     if (state.wizardStep === 2 && !state.evidenceChecked) runPlanEvidence();
     if (state.wizardStep === 5) renderPlanReview();
   }
 
   function wizardData() {
     return {
-      symbol: $('#plan-symbol').value.trim().toUpperCase(),
-      horizon: $('#plan-horizon').value,
-      target: Number($('#plan-target').value),
-      drawdown: Number($('#plan-drawdown').value),
-      risk: $('#plan-risk').value,
-      capital: Number($('#plan-capital').value),
-      thesis: $('#plan-thesis').value.trim(),
-      catalyst: $('#plan-catalyst').value.trim(),
-      invalidation: $('#plan-invalidation').value.trim(),
+      symbol: ($('#plan-symbol')?.value || '').trim().toUpperCase(),
+      horizon: $('#plan-horizon')?.value || '',
+      target: Number($('#plan-target')?.value || 0),
+      drawdown: Number($('#plan-drawdown')?.value || 0),
+      risk: $('#plan-risk')?.value || '',
+      capital: Number($('#plan-capital')?.value || 0),
+      thesis: ($('#plan-thesis')?.value || '').trim(),
+      catalyst: ($('#plan-catalyst')?.value || '').trim(),
+      invalidation: ($('#plan-invalidation')?.value || '').trim(),
       stages: [
-        { name: '观察', trigger: $('#stage1-trigger').value.trim(), weight: '0%' },
-        { name: '验证', trigger: $('#stage2-trigger').value.trim(), weight: $('#stage2-weight').value.trim() },
-        { name: '扩展', trigger: $('#stage3-trigger').value.trim(), weight: $('#stage3-weight').value.trim() },
+        { name: '观察', trigger: ($('#stage1-trigger')?.value || '').trim(), weight: '0%' },
+        { name: '验证', trigger: ($('#stage2-trigger')?.value || '').trim(), weight: ($('#stage2-weight')?.value || '').trim() },
+        { name: '扩展', trigger: ($('#stage3-trigger')?.value || '').trim(), weight: ($('#stage3-weight')?.value || '').trim() },
       ],
-      exit: $('#stage-exit').value.trim(),
+      exit: ($('#stage-exit')?.value || '').trim(),
     };
   }
 
@@ -2301,7 +2301,7 @@
 
   async function nextWizardStep() {
     const message = validateWizardStep();
-    if (message) { $('#wizard-message').textContent = message; return; }
+    if (message) { const wm = $('#wizard-message'); if (wm) wm.textContent = message; return; }
     if (state.wizardStep < 5) { state.wizardStep += 1; renderWizardStep(); return; }
     await generatePlan();
   }
@@ -2311,11 +2311,10 @@
   }
 
   async function runPlanEvidence() {
-    const symbol = $('#plan-symbol').value.trim().toUpperCase();
+    const symbol = ($('#plan-symbol')?.value || '').trim().toUpperCase();
     if (!symbol) return;
     const button = $('#run-plan-evidence');
-    button.disabled = true;
-    button.innerHTML = '<span class="spinner small"></span>检查中';
+    if (button) { button.disabled = true; button.innerHTML = '<span class="spinner small"></span>检查中'; }
     ['market', 'technical', 'news'].forEach((name) => updateEvidenceCheck(name, '检查中', '正在连接数据源', 'partial'));
     const results = await Promise.allSettled([
       api(`/api/v1/stocks/${encodeURIComponent(symbol)}/info`),
@@ -2327,8 +2326,7 @@
     const sourceCount = results[2].status === 'fulfilled' ? (results[2].value.results || []).length : 0;
     updateEvidenceCheck('news', sourceCount ? '已查询' : results[2].status === 'fulfilled' ? '来源有限' : '不可用', sourceCount ? `${sourceCount} 条新闻/X 来源已保留` : results[2].status === 'fulfilled' ? '未返回可追溯来源' : results[2].reason.message, sourceCount ? 'healthy' : 'partial');
     state.evidenceChecked = true;
-    button.disabled = false;
-    button.innerHTML = '<svg><use href="#i-refresh"/></svg>重新运行证据检查';
+    if (button) { button.disabled = false; button.innerHTML = '<svg><use href="#i-refresh"/></svg>重新运行证据检查'; }
   }
 
   function updateEvidenceCheck(name, label, detail, status) {
@@ -2344,15 +2342,19 @@
 
   function renderPlanReview() {
     const data = wizardData();
-    $('#plan-review').innerHTML = `<div><span>证券 / 期限</span><strong>${escapeHtml(data.symbol)} · ${escapeHtml(horizonLabel(data.horizon))}</strong></div><div><span>收益假设 / 最大回撤</span><strong>${data.target}% / ${data.drawdown}%</strong></div><div><span>风险 / 模拟资金</span><strong>${escapeHtml(riskLabel(data.risk))} · ¥${formatNumber(data.capital)}</strong></div><div><span>证据状态</span><strong>${state.evidenceChecked ? '已运行检查；异常来源显式保留' : '未运行完整检查 · 部分证据'}</strong></div><div class="wide"><span>核心研究假设</span><strong>${escapeHtml(data.thesis || '未填写')}</strong></div><div class="wide"><span>失效与退出</span><strong>${escapeHtml(data.invalidation || '未填写')} · ${escapeHtml(data.exit || '未填写')}</strong></div>`;
+    const pr = $('#plan-review');
+    if (!pr) return;
+    pr.innerHTML = `<div><span>证券 / 期限</span><strong>${escapeHtml(data.symbol)} · ${escapeHtml(horizonLabel(data.horizon))}</strong></div><div><span>收益假设 / 最大回撤</span><strong>${data.target}% / ${data.drawdown}%</strong></div><div><span>风险 / 模拟资金</span><strong>${escapeHtml(riskLabel(data.risk))} · ¥${formatNumber(data.capital)}</strong></div><div><span>证据状态</span><strong>${state.evidenceChecked ? '已运行检查；异常来源显式保留' : '未运行完整检查 · 部分证据'}</strong></div><div class="wide"><span>核心研究假设</span><strong>${escapeHtml(data.thesis || '未填写')}</strong></div><div class="wide"><span>失效与退出</span><strong>${escapeHtml(data.invalidation || '未填写')} · ${escapeHtml(data.exit || '未填写')}</strong></div>`;
   }
 
   async function generatePlan() {
-    if (!$('#plan-ack').checked) { $('#wizard-message').textContent = '请先确认“仅研究与模拟”的说明。'; return; }
+    const ack = $('#plan-ack');
+    if (!ack || !ack.checked) { const msg = $('#wizard-message'); if (msg) msg.textContent = '请先确认”仅研究与模拟”的说明。'; return; }
     const data = wizardData();
     const next = $('#wizard-next');
+    if (!next) return;
     next.disabled = true;
-    next.innerHTML = '<span class="spinner small"></span>生成中';
+    next.innerHTML = '<span class=”spinner small”></span>生成中';
     addJob(`${data.symbol} · 生成模拟计划`, '阶段、风险门控与版本快照');
     try {
       const result = await api('/api/v1/recommendations/generate-plan', {
@@ -2375,7 +2377,7 @@
       toast('模拟计划已生成', `${data.symbol} · ${plan.version} · 保留证据时间点`);
     } catch (error) {
       completeLatestJob();
-      $('#wizard-message').textContent = `生成失败：${error.message}`;
+      const wm = $('#wizard-message'); if (wm) wm.textContent = `生成失败：${error.message}`;
       toast('计划生成失败', error.message, 'error');
     } finally {
       next.disabled = false;
@@ -2477,14 +2479,14 @@
     if (!plan) return;
     closeDrawers();
     startPlan(plan.userPlan.symbol);
-    $('#plan-horizon').value = plan.userPlan.horizon;
-    $('#plan-target').value = plan.userPlan.target;
-    $('#plan-drawdown').value = plan.userPlan.drawdown;
-    $('#plan-risk').value = plan.userPlan.risk;
-    $('#plan-capital').value = plan.userPlan.capital;
-    $('#plan-thesis').value = plan.userPlan.thesis;
-    $('#plan-catalyst').value = plan.userPlan.catalyst;
-    $('#plan-invalidation').value = plan.userPlan.invalidation;
+    const pHorizon = $('#plan-horizon'); if (pHorizon) pHorizon.value = plan.userPlan.horizon;
+    const pTarget = $('#plan-target'); if (pTarget) pTarget.value = plan.userPlan.target;
+    const pDrawdown = $('#plan-drawdown'); if (pDrawdown) pDrawdown.value = plan.userPlan.drawdown;
+    const pRisk = $('#plan-risk'); if (pRisk) pRisk.value = plan.userPlan.risk;
+    const pCapital = $('#plan-capital'); if (pCapital) pCapital.value = plan.userPlan.capital;
+    const pThesis = $('#plan-thesis'); if (pThesis) pThesis.value = plan.userPlan.thesis;
+    const pCatalyst = $('#plan-catalyst'); if (pCatalyst) pCatalyst.value = plan.userPlan.catalyst;
+    const pInvalidation = $('#plan-invalidation'); if (pInvalidation) pInvalidation.value = plan.userPlan.invalidation;
     (plan.userPlan.stages || []).forEach((stage, index) => {
       const trigger = $(`#stage${index + 1}-trigger`);
       const weight = $(`#stage${index + 1}-weight`);
