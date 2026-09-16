@@ -481,7 +481,7 @@
         setChip($('#conn-grok'), '待配置', 'partial');
       }
       const broker = status.integrations?.longport;
-      if (broker) $('#broker-summary').textContent = broker.order_mutations_enabled ? '服务端已启用实盘执行' : '服务端强制仅模拟；下单与撤单被拒绝';
+      if (broker) { const bs = $('#broker-summary'); if (bs) bs.textContent = broker.order_mutations_enabled ? '服务端已启用实盘执行' : '服务端强制仅模拟；下单与撤单被拒绝'; }
       return true;
     } catch (error) {
       [sidebarDot, statusDot].forEach((dot) => { dot.className = 'health-dot error'; });
