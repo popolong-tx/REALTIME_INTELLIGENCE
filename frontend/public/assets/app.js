@@ -516,7 +516,7 @@
     setChip(statusChip, probe ? '验证中' : '检查中', 'neutral');
     try {
       const payload = probe
-        ? await api(`/api/v1/overseas-securities/health/provider?probe=true&symbol=${encodeURIComponent($('#overseas-symbol').value.trim() || 'AAPL')}`, { timeout: 35000 })
+        ? await api(`/api/v1/overseas-securities/health/provider?probe=true&symbol=${encodeURIComponent($('#overseas-symbol')?.value?.trim() || 'AAPL')}`, { timeout: 35000 })
         : await api('/api/v1/overseas-securities/providers');
       const provider = probe ? payload : (payload.providers || [])[0];
       const [label, tone] = connectorStatus(provider?.status || 'configuration_required');
@@ -541,22 +541,26 @@
     event?.preventDefault();
     const { query, suffix } = overseasRequestParams();
     if (!query) { toast('请输入海外证券代码', '', 'error'); return; }
-    $('#overseas-result').innerHTML = '<div class="loading-state"><span class="spinner"></span>查询海外证券报价</div>';
+    const resultEl = $('#overseas-result');
+    if (!resultEl) return;
+    resultEl.innerHTML = '<div class="loading-state"><span class="spinner"></span>查询海外证券报价</div>';
     try {
       const quote = await api(`/api/v1/overseas-securities/${encodeURIComponent(query.toUpperCase())}/quote?${suffix.slice(1)}`, { timeout: 35000 });
       const currency = quote.currency || '';
-      $('#overseas-result').innerHTML = `<div class="overseas-quote"><div><span>证券</span><strong>${escapeHtml(quote.symbol || query)} · ${escapeHtml(quote.name || '名称未返回')}</strong><small>${escapeHtml([quote.exchange, quote.mic_code, quote.market].filter(Boolean).join(' · ') || '市场未标注')}</small></div><div><span>最新价</span><strong>${escapeHtml(currency)} ${formatNumber(quote.current_price, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</strong><small>${escapeHtml(quote.provider_timestamp || quote.fetched_at || '时间未返回')}</small></div><div><span>涨跌</span><strong>${formatPercent(quote.price_change_percent)}</strong><small>${formatNumber(quote.price_change, { maximumFractionDigits: 4 })}</small></div><div><span>日内范围</span><strong>${formatNumber(quote.day_low, { maximumFractionDigits: 4 })} – ${formatNumber(quote.day_high, { maximumFractionDigits: 4 })}</strong><small>开盘 ${formatNumber(quote.open, { maximumFractionDigits: 4 })}</small></div><div><span>来源</span><strong>Twelve Data</strong><small>${escapeHtml(quote.freshness_note || '时效取决于供应商授权')}</small></div></div>`;
+      resultEl.innerHTML = `<div class="overseas-quote"><div><span>证券</span><strong>${escapeHtml(quote.symbol || query)} · ${escapeHtml(quote.name || '名称未返回')}</strong><small>${escapeHtml([quote.exchange, quote.mic_code, quote.market].filter(Boolean).join(' · ') || '市场未标注')}</small></div><div><span>最新价</span><strong>${escapeHtml(currency)} ${formatNumber(quote.current_price, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</strong><small>${escapeHtml(quote.provider_timestamp || quote.fetched_at || '时间未返回')}</small></div><div><span>涨跌</span><strong>${formatPercent(quote.price_change_percent)}</strong><small>${formatNumber(quote.price_change, { maximumFractionDigits: 4 })}</small></div><div><span>日内范围</span><strong>${formatNumber(quote.day_low, { maximumFractionDigits: 4 })} – ${formatNumber(quote.day_high, { maximumFractionDigits: 4 })}</strong><small>开盘 ${formatNumber(quote.open, { maximumFractionDigits: 4 })}</small></div><div><span>来源</span><strong>Twelve Data</strong><small>${escapeHtml(quote.freshness_note || '时效取决于供应商授权')}</small></div></div>`;
     } catch (error) { renderOverseasError(error); }
   }
 
   async function searchOverseasSecurities() {
     const { query, suffix } = overseasRequestParams();
     if (!query) { toast('请输入证券代码或公司名称', '', 'error'); return; }
-    $('#overseas-result').innerHTML = '<div class="loading-state"><span class="spinner"></span>搜索全球证券目录</div>';
+    const resultEl = $('#overseas-result');
+    if (!resultEl) return;
+    resultEl.innerHTML = '<div class="loading-state"><span class="spinner"></span>搜索全球证券目录</div>';
     try {
       const result = await api(`/api/v1/overseas-securities/search?q=${encodeURIComponent(query)}${suffix}`, { timeout: 35000 });
       const items = result.results || [];
-      $('#overseas-result').innerHTML = items.length
+      resultEl.innerHTML = items.length
         ? `<div class="overseas-search-list">${items.map((item) => `<button class="overseas-search-item" type="button" data-overseas-symbol="${escapeHtml(item.symbol || '')}" data-overseas-country="${escapeHtml(item.country || '')}" data-overseas-exchange="${escapeHtml(item.exchange || '')}"><strong>${escapeHtml(item.symbol || '—')}</strong><span>${escapeHtml(item.name || '名称未返回')}</span><small>${escapeHtml([item.exchange, item.mic_code, item.country].filter(Boolean).join(' · ') || '市场未标注')}</small><em class="status-chip neutral">选择</em></button>`).join('')}</div>`
         : '<div class="empty-state small"><strong>没有找到匹配证券</strong><span>请尝试证券代码、英文公司名，或补充国家和交易所。</span></div>';
     } catch (error) { renderOverseasError(error); }
@@ -565,14 +569,16 @@
   async function loadOverseasHistory() {
     const { query, suffix } = overseasRequestParams();
     if (!query) { toast('请输入海外证券代码', '', 'error'); return; }
-    const period = $('#overseas-period').value;
-    $('#overseas-result').innerHTML = '<div class="loading-state"><span class="spinner"></span>加载海外历史行情</div>';
+    const resultEl = $('#overseas-result');
+    if (!resultEl) return;
+    const period = $('#overseas-period')?.value || '6mo';
+    resultEl.innerHTML = '<div class="loading-state"><span class="spinner"></span>加载海外历史行情</div>';
     try {
       const result = await api(`/api/v1/overseas-securities/${encodeURIComponent(query.toUpperCase())}/historical?period=${encodeURIComponent(period)}&interval=1d${suffix}`, { timeout: 35000 });
       const rows = result.data || [];
       const first = rows[0] || {};
       const latest = rows[rows.length - 1] || {};
-      $('#overseas-result').innerHTML = `<div class="overseas-history-summary"><div><span>证券 / 市场</span><strong>${escapeHtml(result.symbol || query)} · ${escapeHtml(result.exchange || '—')}</strong><small>${escapeHtml(result.currency || '')} · ${escapeHtml(result.exchange_timezone || '交易所本地时间')}</small></div><div><span>数据点</span><strong>${formatNumber(rows.length)}</strong><small>${escapeHtml(period)} · 日线</small></div><div><span>区间</span><strong>${escapeHtml(first.date || '—')} → ${escapeHtml(latest.date || '—')}</strong><small>按日期升序</small></div><div><span>最新收盘</span><strong>${escapeHtml(result.currency || '')} ${formatNumber(latest.close, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</strong><small>${escapeHtml(result.freshness_note || '时效取决于供应商套餐')}</small></div></div>`;
+      resultEl.innerHTML = `<div class="overseas-history-summary"><div><span>证券 / 市场</span><strong>${escapeHtml(result.symbol || query)} · ${escapeHtml(result.exchange || '—')}</strong><small>${escapeHtml(result.currency || '')} · ${escapeHtml(result.exchange_timezone || '交易所本地时间')}</small></div><div><span>数据点</span><strong>${formatNumber(rows.length)}</strong><small>${escapeHtml(period)} · 日线</small></div><div><span>区间</span><strong>${escapeHtml(first.date || '—')} → ${escapeHtml(latest.date || '—')}</strong><small>按日期升序</small></div><div><span>最新收盘</span><strong>${escapeHtml(result.currency || '')} ${formatNumber(latest.close, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</strong><small>${escapeHtml(result.freshness_note || '时效取决于供应商套餐')}</small></div></div>`;
     } catch (error) { renderOverseasError(error); }
   }
 
