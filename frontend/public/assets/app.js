@@ -3089,9 +3089,9 @@
     $('#overseas-result')?.addEventListener('click', (event) => {
       const item = event.target.closest('[data-overseas-symbol]');
       if (!item) return;
-      $('#overseas-symbol').value = item.dataset.overseasSymbol || '';
-      $('#overseas-country').value = item.dataset.overseasCountry || '';
-      $('#overseas-exchange').value = item.dataset.overseasExchange || '';
+      const os = $('#overseas-symbol'); if (os) os.value = item.dataset.overseasSymbol || '';
+      const oc = $('#overseas-country'); if (oc) oc.value = item.dataset.overseasCountry || '';
+      const oe = $('#overseas-exchange'); if (oe) oe.value = item.dataset.overseasExchange || '';
       queryOverseasQuote();
     });
     $('#check-broker')?.addEventListener('click', checkBroker);
