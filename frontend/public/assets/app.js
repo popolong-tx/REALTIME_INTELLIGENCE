@@ -2184,7 +2184,7 @@
     event.preventDefault();
     const scope = $('#alert-scope').value;
     const condition = $('#alert-condition').value;
-    const symbol = normalizeSymbol($('#alert-symbol').value || state.symbol);
+    const symbol = normalizeSymbol($('#alert-symbol')?.value || state.symbol);
     const thresholdText = $('#alert-threshold').value.trim();
     const threshold = Number(thresholdText);
     if (scope === 'symbol' && !validSymbol(symbol)) { toast('请输入有效证券代码', '例如 AAPL、0700.HK 或 600519.SH', 'error'); return; }
@@ -2193,7 +2193,7 @@
     state.alerts.unshift({ id: `alert-${Date.now()}`, scope, symbol: scope === 'symbol' ? symbol : '', condition, threshold: alertNeedsThreshold(condition) ? threshold : null, status: 'armed', createdAt: new Date().toISOString() });
     writeStorage('nexus-alerts', state.alerts);
     $('#alert-form').reset();
-    $('#alert-symbol').value = state.symbol || '';
+    const as = $('#alert-symbol'); if (as) as.value = state.symbol || '';
     updateAlertFields();
     renderAlerts();
     toast('预警规则已保存', '触发器未配置时会保持“待调度”状态');
@@ -3016,7 +3016,7 @@
     $('#logout-button').addEventListener('click', logout);
     $('#jobs-trigger').addEventListener('click', () => openDrawer('jobs-drawer'));
     $('#close-jobs').addEventListener('click', closeDrawers);
-    $('#notifications-trigger').addEventListener('click', () => { $('#alert-symbol').value = state.symbol || ''; updateAlertFields(); renderAlerts(); openDrawer('alerts-drawer'); });
+    $('#notifications-trigger').addEventListener('click', () => { const as = $('#alert-symbol'); if (as) as.value = state.symbol || ''; updateAlertFields(); renderAlerts(); openDrawer('alerts-drawer'); });
     $('#close-alerts').addEventListener('click', closeDrawers);
     $('#close-plan-drawer')?.addEventListener('click', closeDrawers);
     $('#alert-form').addEventListener('submit', saveAlert);
