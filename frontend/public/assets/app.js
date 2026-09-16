@@ -1319,6 +1319,24 @@
       $$('input[name="project-risk-focus"]').forEach((input) => { input.checked = (context.risk_focus || []).includes(input.value); });
       return;
     }
+    if (workflow === 'sanctions-news') {
+      $('#sanctions-entity').value = context.entity_name || '';
+      if (context.entity_type) { const s = $('#sanctions-entity-type'); if (s) s.value = context.entity_type; }
+      $('#sanctions-jurisdictions').value = (context.jurisdictions || []).join(', ');
+      $$('input[name="sanctions-risk"]').forEach((input) => { input.checked = (context.risk_focus || []).includes(input.value); });
+      if (context.window_days) { const w = $('#sanctions-window'); if (w) w.value = String(context.window_days); }
+      $('#sanctions-context').value = context.additional_context || '';
+      return;
+    }
+    if (workflow === 'market-funding') {
+      $('#market-topic').value = context.topic || '';
+      $('#market-regions').value = (context.regions || []).join(', ');
+      $$('input[name="market-indicator"]').forEach((input) => { input.checked = (context.indicators || []).includes(input.value); });
+      if (context.horizon) { const h = $('#market-horizon'); if (h) h.value = context.horizon; }
+      if (context.window_days) { const w = $('#market-window'); if (w) w.value = String(context.window_days); }
+      $('#market-context').value = context.decision_context || '';
+      return;
+    }
     $('#geo-issue').value = context.issue || '';
     $('#geo-regions').value = (context.regions || []).join(', ');
     $('#geo-actors').value = (context.actors || []).join(', ');
