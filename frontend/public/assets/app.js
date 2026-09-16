@@ -2244,8 +2244,8 @@
   }
 
   function closeWizard() {
-    $('#plan-wizard').classList.add('hidden');
-    $('#plan-library').classList.remove('hidden');
+    $('#plan-wizard')?.classList.add('hidden');
+    $('#plan-library')?.classList.remove('hidden');
     renderPlans();
   }
 
