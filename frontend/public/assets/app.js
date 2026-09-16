@@ -2533,16 +2533,17 @@
   function renderModelDetail() {
     const model = state.models.find((item) => item.id === state.selectedModelId);
     const content = $('#model-result-content');
+    if (!content) return;
     $$('[data-model-id]').forEach((button) => button.classList.toggle('active', button.dataset.modelId === state.selectedModelId));
     $$('[data-model-tab]').forEach((button) => button.classList.toggle('active', button.dataset.modelTab === state.modelTab));
     if (!model) {
-      $('#model-detail-title').textContent = '结果工作区';
+      const titleEl = $('#model-detail-title'); if (titleEl) titleEl.textContent = '结果工作区';
       setChip($('#model-detail-status'), '选择实验', 'neutral');
       content.className = 'empty-state';
       content.innerHTML = '<strong>选择一个实验查看结果</strong><span>结果区只展示真实返回的评估指标；缺失数据不会被示例曲线替代。</span>';
       return;
     }
-    $('#model-detail-title').textContent = model.name;
+    const titleEl = $('#model-detail-title'); if (titleEl) titleEl.textContent = model.name;
     setChip($('#model-detail-status'), modelStatusLabel(model.status), modelStatusClass(model.status));
     content.className = 'model-result-content';
     const hasMetrics = [model.accuracy, model.precision, model.recall, model.f1_score].some((value) => asNumber(value) !== null);
