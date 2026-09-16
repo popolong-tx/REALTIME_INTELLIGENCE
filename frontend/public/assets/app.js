@@ -3103,32 +3103,37 @@
   }
 
   async function init() {
-    applyClearPageTitles();
-    if (!await loadAuthSession()) return;
-    applyBrandConfig(state.brand);
-    renderWorkspaceContext();
-    const today = new Date();
-    $('#today-date').textContent = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long', timeZone: 'Asia/Shanghai' }).format(new Date()).toUpperCase();
-    updateClock();
-    setInterval(updateClock, 1000);
-    [['#refresh-technical', '刷新技术指标'], ['#refresh-models', '刷新模型列表'], ['#close-jobs', '关闭后台任务'], ['#close-alerts', '关闭预警中心'], ['#close-plan-drawer', '关闭计划详情']].forEach(([selector, label]) => $(selector)?.setAttribute('aria-label', label));
-    bindEvents();
-    updateRangeOutputs();
-    renderRecent();
-    renderScreener();
-    renderAlerts();
-    renderPlans();
-    renderIntelligenceMonitors('realtime_research');
-    renderIntelligenceMonitors('project_risk');
-    await loadPlatformManifest();
-    await loadPlans();
-    const intelligence = await loadIntelligenceCapabilities();
-    const projectWorkflow = intelligence?.workflows?.find((item) => item.id === 'project-risk');
-    renderRiskDimensions([], projectWorkflow?.dimensions || Object.entries(PROJECT_RISK_LABELS).map(([id, label]) => ({ id, label })));
-    const healthy = await checkHealth();
-    if (healthy) loadWatchlist();
-    else { const wb = $('#watchlist-body'); if (wb) wb.innerHTML = '<tr><td colspan="5"><div class="empty-state small"><strong>等待数据服务</strong><span>启动后端后可重新加载实时行情。</span><button class="button ghost" id="watchlist-retry">重试</button></div></td></tr>'; }
-    $('#watchlist-retry')?.addEventListener('click', async () => { if (await checkHealth()) loadWatchlist(); });
+    try {
+      applyClearPageTitles();
+      if (!await loadAuthSession()) return;
+      applyBrandConfig(state.brand);
+      renderWorkspaceContext();
+      const today = new Date();
+      const td = $('#today-date'); if (td) td.textContent = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long', timeZone: 'Asia/Shanghai' }).format(today).toUpperCase();
+      updateClock();
+      setInterval(updateClock, 1000);
+      [['#refresh-technical', '刷新技术指标'], ['#refresh-models', '刷新模型列表'], ['#close-jobs', '关闭后台任务'], ['#close-alerts', '关闭预警中心'], ['#close-plan-drawer', '关闭计划详情']].forEach(([selector, label]) => $(selector)?.setAttribute('aria-label', label));
+      bindEvents();
+      updateRangeOutputs();
+      renderRecent();
+      renderScreener();
+      renderAlerts();
+      renderPlans();
+      renderIntelligenceMonitors('realtime_research');
+      renderIntelligenceMonitors('project_risk');
+      await loadPlatformManifest();
+      await loadPlans();
+      const intelligence = await loadIntelligenceCapabilities();
+      const projectWorkflow = intelligence?.workflows?.find((item) => item.id === 'project-risk');
+      renderRiskDimensions([], projectWorkflow?.dimensions || Object.entries(PROJECT_RISK_LABELS).map(([id, label]) => ({ id, label })));
+      const healthy = await checkHealth();
+      if (healthy) loadWatchlist();
+      else { const wb = $('#watchlist-body'); if (wb) wb.innerHTML = '<tr><td colspan="5"><div class="empty-state small"><strong>等待数据服务</strong><span>启动后端后可重新加载实时行情。</span><button class="button ghost" id="watchlist-retry">重试</button></div></td></tr>'; }
+      $('#watchlist-retry')?.addEventListener('click', async () => { if (await checkHealth()) loadWatchlist(); });
+    } catch (error) {
+      console.error('Initialization failed:', error);
+      toast('初始化失败', error.message || '应用启动时发生错误', 'error');
+    }
   }
 
   init();
