@@ -496,15 +496,17 @@
   }
 
   function overseasRequestParams() {
-    const query = $('#overseas-symbol').value.trim();
-    const country = $('#overseas-country').value.trim();
-    const exchange = $('#overseas-exchange').value.trim();
+    const query = $('#overseas-symbol')?.value?.trim() || '';
+    const country = $('#overseas-country')?.value?.trim() || '';
+    const exchange = $('#overseas-exchange')?.value?.trim() || '';
     const suffix = `${country ? `&country=${encodeURIComponent(country)}` : ''}${exchange ? `&exchange=${encodeURIComponent(exchange)}` : ''}`;
     return { query, country, exchange, suffix };
   }
 
   function renderOverseasError(error) {
-    $('#overseas-result').innerHTML = `<div class="empty-state small"><strong>海外证券数据暂不可用</strong><span>${escapeHtml(error.message || '请检查服务端供应商配置。')}</span></div>`;
+    const el = $('#overseas-result');
+    if (!el) return;
+    el.innerHTML = `<div class="empty-state small"><strong>海外证券数据暂不可用</strong><span>${escapeHtml(error.message || '请检查服务端供应商配置。')}</span></div>`;
   }
 
   async function loadOverseasProviderStatus(probe = false) {
